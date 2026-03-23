@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a3a6b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="자체점검 관리자">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.svg">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>자체점검 관리자 현황판 | 유한대학교 감사실</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2230;--bg4:#21262d;
+  --bdr:#30363d;--bdr2:#404550;
+  --ok:#3fb950;--ok-d:#238636;--ok-bg:rgba(63,185,80,.12);--ok-b:rgba(63,185,80,.3);
+  --ng:#f85149;--ng-bg:rgba(248,81,73,.12);--ng-b:rgba(248,81,73,.3);
+  --warn:#d29922;--warn-bg:rgba(210,153,34,.12);--warn-b:rgba(210,153,34,.3);
+  --blue:#58a6ff;--blue-bg:rgba(88,166,255,.12);--blue-b:rgba(88,166,255,.3);
+  --txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;min-height:100vh}
+
+/* ── 상단바 ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:0 20px;height:50px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.topbar-logo{font-size:14px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
+.admin-badge{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700}
+.topbar-r{display:flex;gap:6px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap}
+.btn-dark{background:var(--bg3);border-color:var(--bdr2);color:var(--txt2)}.btn-dark:hover{background:var(--bg4);color:var(--txt)}
+.btn-ok{background:var(--ok-d);border-color:var(--ok);color:#fff}.btn-ok:hover{background:var(--ok)}
+.btn-print{background:#1f4e79;border-color:#2e6da4;color:#90cdf4}.btn-print:hover{background:#2e6da4;color:#fff}
+.btn-reject{background:#6b1a1a;border-color:#c0392b;color:#fca5a5}.btn-reject:hover{background:#c0392b;color:#fff}
+.tag-reject{background:rgba(248,81,73,.15);color:#f85149;border-color:rgba(248,81,73,.4)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;border:1px solid}
+.tag-ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-b)}
+.tag-ng{background:var(--ng-bg);color:var(--ng);border-color:var(--ng-b)}
+.tag-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-b)}
+.tag-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-b)}
+.tag-dim{background:var(--bg3);color:var(--txt3);border-color:var(--bdr)}
+
+/* ── 전체 레이아웃: 사이드바 + 메인(좌+우) ── */
+.layout{display:flex;height:calc(100vh - 50px);overflow:hidden}
+
+/* ── 사이드바 ── */
+.sidebar{width:200px;min-width:200px;background:var(--bg2);border-right:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
+.sb-section{padding:12px 12px 4px;font-size:9.5px;font-weight:700;color:var(--txt3);letter-spacing:.9px;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;cursor:pointer;border-left:2px solid transparent;transition:all .13s;color:var(--txt2);font-size:12px}
+.sb-item:hover{background:var(--bg3);color:var(--txt)}
+.sb-item.active{background:rgba(88,166,255,.08);border-left-color:var(--blue);color:var(--blue)}
+.sb-item-l{display:flex;align-items:center;gap:7px}
+.sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:var(--ok)}.dot-warn{background:var(--warn)}.dot-dim{background:var(--txt3)}.dot-reject{background:var(--ng)}
+.sb-name{font-weight:500;font-size:11.5px}
+.sb-sub{font-size:9.5px;color:var(--txt3);margin-top:1px}
+
+/* ── 메인 컨테이너: 좌(목록) + 우(상세) ── */
+.main-wrap{flex:1;display:flex;overflow:hidden}
+
+/* ── 좌측: 통계+카드 ── */
+.left-pane{width:380px;min-width:300px;max-width:440px;overflow-y:auto;border-right:1px solid var(--bdr);display:flex;flex-direction:column}
+
+/* ── 통계 바 ── */
+.stat-bar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:14px 16px;flex-shrink:0}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.stat-item{text-align:center}
+.stat-val{font-size:22px;font-weight:800;line-height:1}
+.stat-lbl{font-size:10px;color:var(--txt2);margin-top:2px}
+.stat-ok .stat-val{color:var(--ok)}.stat-warn .stat-val{color:var(--warn)}
+.prog-wrap{display:flex;flex-direction:column;gap:5px}
+.prog-row{display:flex;align-items:center;gap:8px}
+.prog-lbl{font-size:10px;color:var(--txt2);width:46px}
+.prog-bar{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+.prog-ok{background:linear-gradient(90deg,var(--ok-d),var(--ok))}
+.prog-warn{background:linear-gradient(90deg,#9e6e0a,var(--warn))}
+.prog-num{font-size:11px;font-weight:700;min-width:32px;text-align:right}
+
+/* ── 미제출 배너 ── */
+.pending-banner{margin:10px 12px 0;padding:10px 12px;background:rgba(210,153,34,.08);border:1px solid var(--warn-b);border-radius:var(--r);flex-shrink:0}
+.pb-title{font-size:11px;font-weight:700;color:var(--warn);margin-bottom:6px}
+.pending-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ptag{padding:2px 8px;border-radius:4px;font-size:11px;background:var(--bg3);color:var(--txt2);border:1px solid var(--bdr);cursor:pointer;transition:all .13s}
+.ptag:hover{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-b)}
+
+/* ── 섹션 타이틀 ── */
+.sec-title-bar{padding:10px 12px 6px;font-size:10px;font-weight:700;color:var(--txt3);letter-spacing:.7px;text-transform:uppercase;flex-shrink:0}
+
+/* ── 부서 카드 ── */
+.dept-list{padding:0 10px 16px;display:flex;flex-direction:column;gap:6px}
+.dept-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;border-left:3px solid var(--bdr)}
+.dept-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.dept-card.st-ok{border-left-color:var(--ok)}
+.dept-card.st-warn{border-left-color:var(--warn)}
+.dept-card.st-admin{border-left-color:var(--blue)}
+.dept-card:hover{background:var(--bg3);border-color:var(--bdr2);transform:translateX(2px)}
+.dept-card.selected{border-color:var(--blue);background:rgba(88,166,255,.06);box-shadow:0 0 0 1px rgba(88,166,255,.2)}
+.dc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.dc-name{font-size:13px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:5px}
+.dc-icon{font-size:14px}
+.dc-writer{font-size:10.5px;color:var(--txt2);margin-bottom:5px;min-height:14px}
+.dc-prog{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.dc-bar{flex:1;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.dc-fill{height:100%;border-radius:2px;transition:width .4s}
+.dc-fill-ok{background:var(--ok)}.dc-fill-warn{background:var(--warn)}.dc-fill-dim{background:var(--txt3)}
+.dc-pct{font-size:10px;font-weight:700;min-width:26px;text-align:right}
+.dc-meta{font-size:10px;color:var(--txt3);display:flex;gap:8px}
+.dc-ng{color:var(--ng);font-weight:600}
+
+/* ── 우측: 상세 패널 ── */
+.right-pane{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg)}
+
+/* 상세 없을 때 빈 화면 */
+.empty-detail{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--txt3);gap:12px}
+.empty-detail .ei{font-size:48px;opacity:.3}
+.empty-detail .et{font-size:14px;font-weight:600}
+.empty-detail .es{font-size:12px}
+
+/* 상세 헤더 */
+.dp-head{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:14px 20px;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;z-index:10}
+.dp-title{font-size:16px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:8px}
+.dp-meta{font-size:11px;color:var(--txt2);margin-top:4px;line-height:1.6}
+.dp-head-r{display:flex;gap:6px;align-items:flex-start;flex-shrink:0}
+
+/* 요약 카드 */
+.dp-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.ds-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px;text-align:center}
+.ds-val{font-size:24px;font-weight:800;line-height:1}
+.ds-lbl{font-size:10px;color:var(--txt2);margin-top:3px}
+.ds-card.ok{border-color:var(--ok-b);background:var(--ok-bg)}.ds-card.ok .ds-val{color:var(--ok)}
+.ds-card.ng{border-color:var(--ng-b);background:var(--ng-bg)}.ds-card.ng .ds-val{color:var(--ng)}
+
+/* 이상있음 목록 */
+.ng-list{margin:0 20px 12px;padding:12px 14px;background:var(--ng-bg);border:1px solid var(--ng-b);border-radius:var(--r)}
+.ng-list-title{font-size:11px;font-weight:700;color:var(--ng);margin-bottom:8px}
+.ng-list-item{font-size:11.5px;padding:4px 0;border-bottom:1px solid rgba(248,81,73,.12)}
+.ng-list-item:last-child{border-bottom:none}
+
+/* 탭 */
+.dp-tabs{display:flex;border-bottom:1px solid var(--bdr);background:var(--bg2);overflow-x:auto;flex-shrink:0;padding:0 16px}
+.dp-tab{padding:9px 14px;font-size:12px;font-weight:600;color:var(--txt2);cursor:pointer;border:none;background:transparent;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .13s}
+.dp-tab:hover{color:var(--txt)}
+.dp-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tbadge{display:inline-block;min-width:16px;height:16px;border-radius:8px;font-size:9px;font-weight:800;text-align:center;line-height:16px;margin-left:4px;padding:0 4px}
+.tbadge-ok{background:var(--ok-bg);color:var(--ok)}
+.tbadge-ng{background:var(--ng-bg);color:var(--ng)}
+.tbadge-dim{background:var(--bg3);color:var(--txt3)}
+
+/* 점검 테이블 */
+.tab-content{padding:0 20px 20px}
+.chk-table{width:100%;border-collapse:collapse;margin-top:12px}
+.chk-table th{padding:8px 12px;background:var(--bg3);font-size:10.5px;font-weight:700;color:var(--txt2);text-align:center;border-bottom:1px solid var(--bdr);border-right:1px solid var(--bdr)}
+.chk-table th:first-child{text-align:left}
+.chk-table td{padding:8px 12px;border-bottom:1px solid var(--bdr);border-right:1px solid var(--bdr);vertical-align:middle;font-size:12px}
+.chk-table tr:last-child td{border-bottom:none}
+.chk-table tr.row-ng{background:rgba(248,81,73,.04)}
+.fn{font-size:12px;font-weight:700;color:var(--txt)}
+.newbadge{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-b);margin-left:4px;font-weight:700}
+.ck{font-size:11px;color:var(--txt2);padding:1px 0}
+.vbadge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
+.v-ok{background:var(--ok-bg);color:var(--ok)}.v-ng{background:var(--ng-bg);color:var(--ng)}.v-dim{background:var(--bg3);color:var(--txt3)}
+.shared-badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9.5px;font-weight:700;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);cursor:help}
+
+/* 코멘트 영역 */
+.dp-comment{border-top:1px solid var(--bdr);padding:16px 20px;background:var(--bg2);flex-shrink:0}
+.dp-comment label{font-size:11px;font-weight:600;color:var(--txt2);display:block;margin-bottom:6px}
+.comment-inp{width:100%;padding:8px 12px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:inherit;resize:none;min-height:52px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s}
+.comment-inp:focus{border-color:var(--blue)}
+.comment-row{display:flex;gap:8px;margin-top:8px;align-items:center}
+
+/* 편집 패널 */
+.edit-section{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.edit-sec-head{background:var(--bg3);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.edit-sec-title{font-size:13px;font-weight:700;color:var(--txt)}
+.edit-sec-toggle{color:var(--txt2);font-size:12px}
+.edit-sec-body{padding:12px 16px;display:none}
+.edit-sec-body.open{display:block}
+.edit-item{background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;padding:12px;margin-bottom:8px}
+.edit-item-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.edit-field-name{flex:1;padding:6px 10px;border:1px solid var(--bdr2);border-radius:5px;background:var(--bg);color:var(--txt);font-size:12px;font-weight:600;font-family:inherit}
+.edit-field-name:focus{outline:none;border-color:var(--blue)}
+.dept-checkboxes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.dept-tag-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:5px;
+  border:1.5px solid var(--bdr);background:var(--bg4);cursor:pointer;font-size:11px;color:var(--txt2);
+  transition:all .13s;user-select:none;white-space:nowrap}
+.dept-tag-btn:hover{border-color:var(--blue-b);color:var(--blue);background:var(--blue-bg)}
+.dept-tag-btn.active{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-b);font-weight:600}
+.dept-tag-btn .dtb-check{font-size:10px;opacity:.7}
+/* 부서 관리 영역 */
+.dept-mgmt-area{background:var(--bg3);border:1px solid var(--bdr);border-radius:6px;padding:12px;margin-top:10px}
+.dept-mgmt-title{font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.5px;margin-bottom:8px}
+.dept-list-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.dept-name-inp{flex:1;padding:5px 9px;border:1px solid var(--bdr2);border-radius:4px;background:var(--bg);color:var(--txt);font-size:12px;font-family:inherit}
+.dept-name-inp:focus{outline:none;border-color:var(--blue)}
+.dept-del-btn{background:none;border:1px solid var(--bdr2);color:var(--txt3);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px;line-height:1}
+.dept-del-btn:hover{border-color:var(--ng);color:var(--ng)}
+.dept-add-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border:1.5px dashed var(--bdr);border-radius:5px;background:none;color:var(--txt3);cursor:pointer;font-size:11px;font-family:inherit;margin-top:4px}
+.dept-add-btn:hover{border-color:var(--ok);color:var(--ok)}
+.edit-checks-label{font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:4px;letter-spacing:.5px}
+.edit-check-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.edit-check-inp{flex:1;padding:5px 8px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg);color:var(--txt);font-size:11px;font-family:inherit}
+.edit-check-inp:focus{outline:none;border-color:var(--blue)}
+.edit-check-del{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1}
+.edit-check-del:hover{color:var(--ng)}
+.edit-add-check{background:none;border:1px dashed var(--bdr);color:var(--txt3);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:inherit;margin-top:4px}
+.edit-add-check:hover{border-color:var(--blue);color:var(--blue)}
+.new-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)}
+.new-toggle input[type=checkbox]{cursor:pointer}
+
+/* API 드로어 */
+.api-drawer{position:fixed;right:0;top:50px;bottom:0;width:320px;background:var(--bg2);border-left:1px solid var(--bdr);z-index:400;transform:translateX(100%);transition:transform .25s;overflow-y:auto;padding:20px}
+.api-drawer.open{transform:translateX(0)}
+.api-inp{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--txt);font-size:11px;font-family:monospace;outline:none}
+.api-inp:focus{border-color:var(--blue)}
+
+/* 토스트 */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:7px;font-size:12px;font-weight:600;color:#fff;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:var(--ok-d)}.toast.err{background:var(--ng)}.toast.warn{background:#7a5200}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pulse{animation:pulse 1.4s infinite}
+
+/* ── 인쇄 스타일 ── */
+/* ── 모바일 반응형 ── */
+@media(max-width:768px){
+  .topbar{padding:0 12px;height:48px}
+  .topbar-logo{font-size:12px}
+  .layout{flex-direction:column;height:auto;overflow:visible}
+  .sidebar{display:none}
+  .left-pane{width:100%;min-width:0;max-width:100%;border-right:none;border-bottom:1px solid var(--bdr);max-height:45vh;overflow-y:auto}
+  .right-pane{width:100%;min-height:55vh}
+  .dp-head{padding:12px 14px;flex-wrap:wrap;gap:8px}
+  .dp-title{font-size:15px}
+  .dp-summary{grid-template-columns:repeat(3,1fr);gap:6px;padding:12px 14px}
+  .ds-val{font-size:22px}
+  .ds-lbl{font-size:10px}
+  .dp-tabs{padding:0 12px;overflow-x:auto;gap:4px}
+  .dp-tab{font-size:11px;padding:7px 10px;white-space:nowrap}
+  .chk-table{font-size:11px;table-layout:fixed}
+  .chk-table th,.chk-table td{padding:7px 6px}
+  .tab-content{padding:10px 12px}
+  .dp-comment{padding:12px 14px;flex-direction:column}
+  .dp-comment textarea{min-height:60px}
+  .pending-banner{padding:10px 14px;font-size:11px;flex-wrap:wrap;gap:6px}
+}
+
+@media print{
+  body{font-family:'Noto Sans KR',sans-serif !important;background:#fff !important;color:#000 !important;font-size:10pt}
+
+  /* 화면 UI 전부 숨김 */
+  .topbar,.sidebar,.left-pane,.dp-head-r,.dp-comment,.dp-tabs,.api-drawer,
+  .empty-detail,.stat-bar,.pending-banner,.sec-title-bar,
+  #printBtn,#refreshBtn,#layoutDiv,.right-pane > .empty-detail{display:none !important}
+
+  /* 레이아웃 펼침 */
+  .layout,#layoutDiv{display:block !important;height:auto !important}
+  .main-wrap{display:block !important}
+  .right-pane{overflow:visible !important;background:#fff !important;display:block !important}
+  #detailContent{display:flex !important;flex-direction:column !important}
+
+  /* 인쇄 헤더 */
+  .print-report-header{display:block !important;margin:0 0 10px 0}
+  .print-report-header table{width:100%;border-collapse:collapse}
+  .print-report-header td{border:1px solid #bbb !important;padding:5px 10px;font-size:10pt}
+  .print-report-header tr:first-child td{
+    background:#1a3a6b !important;color:#fff !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    font-size:12pt;font-weight:800}
+  .print-report-header tr:not(:first-child) td:nth-child(odd){
+    background:#f0f4f8 !important;font-weight:700;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* 상세 헤더 */
+  .dp-head{
+    background:#1a3a6b !important;color:#fff !important;position:static !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    padding:12px 16px;border-bottom:2px solid #1a3a6b}
+  .dp-title{color:#fff !important;font-size:13pt;font-weight:800}
+  .dp-meta{color:rgba(255,255,255,.8) !important;font-size:10pt}
+
+  /* 요약 카드 */
+  .dp-head,.dp-summary{page-break-inside:avoid}
+  .dp-summary{background:#fff;border-bottom:1px solid #ccc;padding:10px 16px}
+  /* 헤더+요약 묶음으로 페이지 분리 방지 */
+  #detailContent > .dp-head{page-break-after:avoid}
+  .ds-card{border:1px solid #ccc !important;background:#f8f8f8 !important}
+  .ds-card.ok{background:#e8f7ef !important;border-color:#a3d9bc !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ds-card.ng{background:#fdecea !important;border-color:#f0a89f !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ds-val{color:#000 !important}
+  .ds-card.ok .ds-val{color:#1a7f4b !important}
+  .ds-card.ng .ds-val{color:#c0392b !important}
+
+  /* 이상있음 목록 */
+  .ng-list{background:#fdecea !important;border:1px solid #f0a89f !important;
+    margin:0 20px 10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    page-break-inside:avoid;page-break-after:avoid}
+
+  /* 탭 패널: 모두 표시 */
+  .tab-panel{display:block !important;margin-bottom:12px}
+  .tab-panel:last-child{page-break-after:avoid !important}
+  /* 탭 제목은 다음 내용과 반드시 같은 페이지에 */
+  .tab-section-title{page-break-after:avoid !important;page-break-inside:avoid}
+  .tab-section-title{
+    font-size:11pt;font-weight:700;color:#1a3a6b !important;
+    margin:10px 0 4px;border-bottom:1px solid #1a3a6b;padding-bottom:4px;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tab-content{padding:0 16px 30px !important}
+
+  /* 점검 테이블 */
+  .chk-table{
+    border:1px solid #ccc !important;border-collapse:collapse !important;width:100%;
+    page-break-inside:auto}
+  .chk-table thead{display:table-header-group;page-break-inside:avoid}
+  .chk-table th{
+    background:#1a3a6b !important;color:#fff !important;font-size:9pt;padding:5px 8px;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;border:1px solid #aaa !important}
+  .chk-table td{font-size:9pt;padding:5px 8px;border:1px solid #ccc !important}
+  .chk-table tr:last-child td{border-bottom:1px solid #ccc !important}
+  .chk-table tbody tr{page-break-inside:avoid;break-inside:avoid}
+  /* 테이블이 페이지를 넘어갈 때 앞 여백 제거 */
+  .chk-table tbody tr:first-child td{border-top:1px solid #ccc !important}
+  .chk-table tr.row-ng{background:#fdecea !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* 배지 */
+  .vbadge{border:1px solid #ccc;padding:2px 8px;font-size:9pt;border-radius:3px}
+  .v-ok{background:#e8f7ef !important;color:#1a7f4b !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .v-ng{background:#fdecea !important;color:#c0392b !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .v-dim{background:#f0f0f0 !important;color:#888 !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .fn{color:#000 !important;font-size:10pt;font-weight:700}
+  .ck{color:#333 !important;font-size:9pt}
+  .newbadge{background:#fff3cd !important;color:#856404 !important;
+    border:1px solid #ffc107 !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .shared-badge{background:#dce9f8 !important;color:#1a3a6b !important;
+    border:1px solid #a3c4f0 !important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* 빈 페이지 방지 */
+  body::after{display:none !important}
+  #detailContent:empty{display:none !important}
+
+  @page{size:A4;margin:15mm 12mm}
+  /* 빈 페이지 완전 방지 */
+  body::after{display:none !important;content:none !important}
+  .tab-content::after{display:none !important;content:none !important}
+  #detailContent::after{display:none !important;content:none !important}
+  .tab-panel:empty{display:none !important}
+}
+.print-report-header{display:none}
+/* 인쇄 전용 요소: 화면에서 항상 숨김 */
+.print-report-header{display:none !important}
+@media print{.print-report-header{display:block !important}}
+/* 인쇄 헤더 테이블 기본 스타일 */
+.print-report-header table td{font-family:'Noto Sans KR',sans-serif}
+</style>
+</head>
+<body>
+
+<!-- ══ 비밀번호 잠금 오버레이 ══ -->
+<div id="pwOverlay" style="
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:#0f172a;z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Noto Sans KR',sans-serif">
+  <div style="background:#1e293b;border-radius:16px;padding:40px 36px;
+    width:100%;max-width:360px;text-align:center;
+    border:1px solid rgba(255,255,255,.08)">
+    <div style="font-size:32px;margin-bottom:12px">🔒</div>
+    <div style="font-size:11px;color:#94a3b8;letter-spacing:.5px;margin-bottom:4px">유한대학교 감사실</div>
+    <div style="font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:24px">관리자 인증</div>
+    <input id="pwInput" type="password" placeholder="비밀번호 입력"
+      autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')checkPw()"
+      style="width:100%;padding:12px 16px;border-radius:8px;
+        border:1px solid rgba(255,255,255,.15);
+        background:#0f172a;color:#f1f5f9;font-size:15px;
+        font-family:inherit;outline:none;margin-bottom:8px;
+        box-sizing:border-box;text-align:center;letter-spacing:4px">
+    <div id="pwErr" style="font-size:12px;color:#f87171;height:18px;margin-bottom:8px"></div>
+    <button onclick="checkPw()"
+      style="width:100%;padding:12px;background:#1a3a6b;color:#fff;
+        border:none;border-radius:8px;font-size:14px;font-weight:700;
+        font-family:inherit;cursor:pointer;letter-spacing:.5px">
+      확인
+    </button>
+    <div style="font-size:10px;color:#475569;margin-top:16px;line-height:1.6">
+      비밀번호를 모르는 경우 감사실 담당자에게 문의하세요
+    </div>
+  </div>
+</div>
+
+
+<!-- 상단바 -->
+<div class="topbar">
+  <div class="topbar-l">
+    <div class="topbar-logo" id="topbarTitle">2025 행정업무 종합 자체점검</div>
+    <span class="admin-badge">ADMIN</span>
+    <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
+      <span style="font-size:11px;color:var(--txt2)">학년도</span>
+      <select id="yearSelect" onchange="changeYear(this.value)"
+        style="padding:3px 8px;border-radius:5px;border:1px solid var(--bdr2);
+               background:var(--bg3);color:var(--txt);font-size:12px;font-weight:600;
+               font-family:inherit;cursor:pointer;outline:none">
+      </select>
+    </div>
+  </div>
+  <div class="topbar-r">
+    <span id="apiStatus" class="tag tag-ng">API 미연결</span>
+    <div style="display:flex;background:rgba(255,255,255,.1);border-radius:6px;padding:2px;gap:2px">
+      <button class="btn btn-sm" id="tabMainBtn" onclick="switchMainTab('main')"
+        style="background:rgba(255,255,255,.2);color:#fff;border-color:transparent">📊 현황</button>
+      <button class="btn btn-sm" id="tabEditBtn" onclick="switchMainTab('edit')"
+        style="background:transparent;color:rgba(255,255,255,.6);border-color:transparent">⚙️ 항목 편집</button>
+    </div>
+    <button class="btn btn-dark btn-sm" id="refreshBtn" onclick="loadAll()">🔄 새로고침</button>
+    <button class="btn btn-print btn-sm" id="printBtn" onclick="doPrint()" style="display:none">🖨 인쇄</button>
+    <button class="btn btn-dark btn-sm" onclick="exportCSV()">📥 CSV</button>
+    <button class="btn btn-dark btn-sm" onclick="toggleApiDrawer()">⚙️ 설정</button>
+  </div>
+</div>
+
+<div class="layout" id="layoutDiv">
+  <!-- 사이드바 -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-section">부서 현황</div>
+    <div id="sbList"></div>
+  </nav>
+
+  <!-- 메인 래퍼 -->
+  <div class="main-wrap">
+
+    <!-- ── 좌측: 통계 + 카드 목록 ── -->
+    <div class="left-pane">
+      <!-- 통계 -->
+      <div class="stat-bar">
+        <div class="stat-row">
+          <div class="stat-item"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">전체 부서</div></div>
+          <div class="stat-item stat-ok"><div class="stat-val" id="s-submit">0</div><div class="stat-lbl">제출 완료</div></div>
+          <div class="stat-item stat-warn"><div class="stat-val" id="s-save">0</div><div class="stat-lbl">진행 중</div></div>
+          <div class="stat-item"><div class="stat-val" id="s-none" style="color:var(--txt3)">0</div><div class="stat-lbl">미시작</div></div>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-row">
+            <div class="prog-lbl">제출 완료</div>
+            <div class="prog-bar"><div class="prog-fill prog-ok" id="bar-ok" style="width:0%"></div></div>
+            <div class="prog-num" id="pct-ok" style="color:var(--ok)">0%</div>
+          </div>
+          <div class="prog-row">
+            <div class="prog-lbl">진행 중</div>
+            <div class="prog-bar"><div class="prog-fill prog-warn" id="bar-warn" style="width:0%"></div></div>
+            <div class="prog-num" id="pct-warn" style="color:var(--warn)">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 미제출 배너 -->
+      <div class="pending-banner" id="pendingBanner" style="display:none">
+        <div class="pb-title">⚠️ 미제출 부서 <span id="pendingCnt">0</span>개</div>
+        <div class="pending-tags" id="pendingTags"></div>
+      </div>
+
+      <div class="sec-title-bar">부서별 제출 현황</div>
+      <div class="dept-list" id="deptList"></div>
+    </div>
+
+    <!-- ── 우측: 상세 패널 ── -->
+    <div class="right-pane" id="rightPane">
+      <div class="empty-detail" id="emptyDetail">
+        <div class="ei">📋</div>
+        <div class="et">부서를 선택하면 점검 결과가 표시됩니다</div>
+        <div class="es">좌측 목록에서 부서를 클릭하세요</div>
+      </div>
+      <!-- 상세 내용 (동적 생성) -->
+      <div id="detailContent" style="display:none;flex-direction:column;flex:1"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 항목 편집 패널 -->
+<div id="editPanel" style="display:none;height:calc(100vh - 50px);overflow-y:auto;padding:20px">
+  <div style="max-width:1100px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--txt)">⚙️ 점검 항목 편집</div>
+        <div style="font-size:11px;color:var(--txt2);margin-top:3px">항목별 담당부서 변경 또는 점검사항 수정 가능합니다. 변경사항은 즉시 적용됩니다.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ok btn-sm" onclick="saveEditedSections()">💾 변경사항 저장</button>
+        <button class="btn btn-dark btn-sm" onclick="resetEditedSections()">↩ 원래대로</button>
+      </div>
+    </div>
+    <div id="editContent"></div>
+  </div>
+</div>
+
+<!-- API 드로어 -->
+<div class="api-drawer" id="apiDrawer">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:700;color:var(--txt)">⚙️ API 연결 설정</div>
+    <button onclick="toggleApiDrawer()" style="background:none;border:none;color:var(--txt2);font-size:18px;cursor:pointer">✕</button>
+  </div>
+  <div style="font-size:11px;color:var(--txt2);margin-bottom:6px">Google Apps Script 웹앱 URL</div>
+  <input class="api-inp" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+  <div style="display:flex;gap:6px;margin-top:8px">
+    <button class="btn btn-ok btn-sm" onclick="saveApiUrl()">저장</button>
+    <button class="btn btn-dark btn-sm" onclick="testApi()">연결 테스트</button>
+  </div>
+  <div style="margin-top:16px;font-size:10px;color:var(--txt3);line-height:1.8">
+    배포 방법<br>
+    1. 구글 스프레드시트 → 확장 프로그램 → Apps Script<br>
+    2. apps_script.js 붙여넣기 → 저장<br>
+    3. 배포 → 새 배포 → 웹앱<br>
+    4. 실행: 나 / 액세스: 모든 사용자<br>
+    5. URL 복사 후 위에 입력
+  </div>
+  <div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr);font-size:10px;color:var(--txt2)">
+    ※ API 미연결 시 같은 PC/브라우저에서 부서용 HTML을 열면 localStorage로 자동 동기화됩니다.
+  </div>
+  <!-- 데이터 초기화 -->
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)">
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px;letter-spacing:.5px">🗑 데이터 초기화</div>
+    <div style="font-size:10px;color:var(--txt3);margin-bottom:10px;line-height:1.5">
+      <span id="clearYearLabel"></span>의 데이터를 초기화합니다.
+    </div>
+    <button class="btn btn-dark btn-sm" style="width:100%;margin-bottom:6px" onclick="clearLocalData()">
+      🗑 로컬 데이터 초기화 (이 PC만)
+    </button>
+    <button class="btn btn-dark btn-sm" style="width:100%;background:#3d1515;border-color:#7f3535;color:#fca5a5" onclick="clearServerData()">
+      ⚠️ 서버 데이터 전체 삭제
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════ 공통 데이터 ══════════
+const SECTIONS=[
+ {id:1,title:'교직원 인사 관리',items:[
+  {f:'임용 보고',d:['법인','학사지원팀'],new:false,c:['교원 및 비전임, 강사 임용 보고 여부','임용한 날부터 7일 이내 관할청 보고 여부','임용대장 관리 여부']},
+  {f:'충원계획 및 모집공고',d:['학사지원팀'],new:false,c:['연도별 신규교수 충원계획 및 모집공고 이행 여부','학과별 채용인원 적정성 여부','모집공고 전공분야 및 인원 채용 여부','신규채용시 공개채용 원칙 준수 여부','모집공고에 명시되지 않은 임의 심사기준 적용 여부']},
+  {f:'채용심사 과정',d:['학사지원팀'],new:false,c:['심사위원 구성 적정 여부 (1/3 이상 외부인)','단계별 심사 이행 여부 (기초, 전공, 면접)','교수자격 유무 및 경력요건 심사','전공적부심사, 연구실적물 심사','면접심사 과정 적정 여부']},
+  {f:'합격자 결정 과정',d:['학사지원팀'],new:false,c:['학교장의 제청, 이사회 의결 여부','정관에 의한 계약조건 이행 여부','특정대학 학사학위소지자 2/3 초과여부','최종 합격자를 인사규정에 의거 결정 여부','신원조사 및 결격사유조회, 성범죄경력조회 여부']},
+  {f:'승진·재임용 및 보직관리',d:['학사지원팀'],new:false,c:['승진임용시 심사위원 구성 적정 여부','최저승진 소요 년수 미달자 승진 여부','직제규정에 없는 보직임용 여부','교원 재임용 및 징계절차 적정성 여부','재임용 심의시 15일 이상 의견제출 기회부여 여부']},
+  {f:'교원 겸직',d:['학사지원팀'],new:false,c:['사기업체 임원 겸직 여부','법인 임원의 대학 교직원 겸직 여부','영리업무 종사 여부']},
+  {f:'금품수수',d:['학사지원팀','총무회계팀'],new:false,c:['금품제공 조건으로 채용 여부','발전기금 납부 강요 여부','차용형식으로 금품수수 여부']},
+  {f:'교직원 복무 관리',d:['학사지원팀'],new:false,c:['출산휴가 미허가 여부','구속기소된 자의 징계절차 이행 여부','총장 허가없이 공무 국외여행 실시 여부','근무시간 중 학위 무단 수강']},
+  {f:'총장 및 이사장 부당인사 지시',d:['학사지원팀'],new:false,c:['이사장 결재로 면직처리 여부','총장이 임의로 임용예정자 채용 여부','이사장이 별도 면접실시 등 인사 관여 여부','학교법인 이사를 겸임 조교수로 임용 여부']},
+  {f:'기타 인사 관리',d:['학사지원팀'],new:false,c:['겸임 교원 법정 교원정원의 1/2 범위내 여부','교원인사위원회 회의록 허위 작성 여부','전임교원 의원면직 제한여부 확인','교직원 4대 폭력 예방교육 실시 여부']},
+ ]},
+ {id:2,title:'예산 및 회계 관리',items:[
+  {f:'예산일반',d:['전략기획팀','총무회계팀'],new:false,c:['예산편성요령 작성 여부 (2개월전)','예산안 이사장 제출 (1개월전)','예산안 이사회 의결 (20일전)','홈페이지 공개 (5일전)','예산총칙에 의해 전용 제한된 항·목의 전용 여부','예산 전용 이사회 보고 여부','성립전 예산집행 여부','적립금의 목적 외 사용 여부']},
+  {f:'결산일반',d:['전략기획팀','총무회계팀'],new:false,c:['결산서 이사장 제출 (40일 이내)','홈페이지 공개 (3개월 이내)','예·결산 비교 증감 대비액 작성 여부','불용액 발생사유의 적정성 여부']},
+  {f:'등록금 책정 절차',d:['전략기획팀'],new:false,c:['등록금심의위원회 설치 및 운영 여부','인상률 상한제 준수 여부','산정근거 공시 여부']},
+  {f:'회계일반',d:['총무회계팀'],new:false,c:['지출명령 없는 지출 존재 여부','현금지출 거래의 적정성','소액현금 제도운용의 적정성','교비회계의 타 회계로의 전출 및 대여 여부','산학협력단 운영비 교비회계 집행여부']},
+  {f:'계약일반',d:['총무회계팀'],new:false,c:['수의계약 적정성 (2천만원 미만)','계약절차 적정성 (G2B전자도달시스템 활용)','입찰보증금·계약보증금 납부 적정성','예정가격 작성의 적정성 여부','계약서 및 검사조서 작성 여부']},
+  {f:'인건비',d:['총무회계팀','학사지원팀'],new:false,c:['규정에 없는 항목 포함 여부','직제에 없는 직원 존재 여부','인건비 지급 규정 준수 여부','급여대장의 지급액과 실제 지급 일치 여부','실제 강의시수 기준 강사료 산정 여부']},
+  {f:'계정간 일치 및 회계간 계정 대체',d:['법인','총무회계팀','전략기획팀'],new:false,c:['자산의 특정기금과 기본금의 적립금 계정 일치','자산의 토지·건물·구축물과 법인계정 일치','계정대체 적정성 (전출금, 전입금, 출자금, 법인세 환급금)']},
+  {f:'재산관리',d:['법인','총무회계팀'],new:false,c:['매입·처분 재산의 자금 입출금 적정성','이사회 의결 또는 관할청 허가 필요 매입·처분 의결 여부','기본재산의 소유권 및 제한물권 확인','수익용기본재산 취득에 교비자금 투입 여부']},
+  {f:'등록금 수입',d:['총무회계팀'],new:false,c:['등록금 수입 누락 여부','등록금 선수금의 회계연도 개시 전 집행여부','등록금 수입통장의 관리실태']},
+  {f:'기부금 수입',d:['총무회계팀'],new:false,c:['기부금 수입 누락 여부','기부목적에 맞게 집행되었는지 여부']},
+  {f:'임대수입',d:['총무회계팀'],new:false,c:['학교시설 임대수입금의 법인 사용여부','임대보증금 및 임대수입금의 적정성 여부','임대계약의 적정성 검토']},
+  {f:'차입금',d:['총무회계팀'],new:false,c:['관할청의 허가 여부','이자비용의 적정성']},
+  {f:'법인카드',d:['총무회계팀'],new:true,c:['법인카드 포인트 세입처리 여부']},
+  {f:'장학금',d:['학생복지팀'],new:false,c:['장학금 지급 총액의 법정기준 충족 여부','장학금 지급기준 준수여부','장학금 중복지급 여부']},
+  {f:'업무추진비, 행사비, 학생지원비, 홍보비, 입시경비',d:['총무회계팀'],new:false,c:['지출명령의 정당성 확인','인건비성 업무추진비 존재 여부','과다한 현금사용 등 지출방법의 적정성','사후정산의 적정성']},
+  {f:'세무관련',d:['총무회계팀'],new:false,c:['근로소득, 기타소득 원천징수의 적정성 여부','고유목적사업준비금 설정·사용의 적정성 여부','가산세 납부현황 및 발생원인 확인','VAT 신고내역 확인']},
+  {f:'국고보조금',d:['총무회계팀','산학협력단'],new:false,c:['별도계정 설정 및 구분경리 여부','입금·지출 증빙과 관할청 보고서 일치여부','국고보조금 목적외 사용여부']},
+  {f:'기타회계',d:['총무회계팀'],new:false,c:['발전기금·기숙사 회계의 교비회계 포함 여부','입출금 및 거래내역 확인']},
+  {f:'가지급금 및 가수금',d:['총무회계팀'],new:false,c:['가지급금 및 가수금의 내역 확인 및 본 계정 미대체 사유 확인']},
+  {f:'업무용차량관리',d:['총무회계팀','시설안전관재팀'],new:false,c:['차량운행 일지나 점검 일지 등 작성여부 확인']},
+ ]},
+ {id:3,title:'연구비 관리',items:[
+  {f:'연구비 신청 및 협약 체결',d:['산학협력단'],new:false,c:['신청서 및 협약서 유무 확인','연구비 소요명세서 등 확인','목적외 집행 여부','중복 신청 여부','연구책임자 친인척 외부연구원 참여 여부']},
+  {f:'연구비 관리',d:['산학협력단'],new:false,c:['전담조직 설치 여부','계약 주체 확인 (전담조직의 장이 아닌 개인과 계약 여부)','연구과제별 계정 관리 여부']},
+  {f:'연구비 집행 - 인건비 및 수당',d:['산학협력단','학사지원팀'],new:false,c:['연구과제별 카드 발급 여부 / 개인 카드 사용 여부','증빙자료 보존 기간 준수 여부','인건비 한도 초과 여부','인건비 이중 지급 여부','과제 중복 참여 여부','연구보조원 등록금·연구책임자 생활비 등 사적 사용 여부']},
+  {f:'연구비 집행 - 여비',d:['산학협력단','학사지원팀'],new:false,c:['출장신청서 및 복명서 여부','해외 출장 중 국내 출장 처리 여부','연구와 무관한 출장비 지급 여부']},
+  {f:'연구비 집행 - 회의비',d:['산학협력단'],new:false,c:['회의록 작성 여부','정당한 회의 참석자 수당 지급 여부','소득세 공제 여부','카드 사용 일시 및 장소 확인 (공휴일, 유흥업소 등)']},
+  {f:'연구비 집행 - 수용비·기자재·공공요금',d:['산학협력단'],new:false,c:['목적외 사용 여부','연구와 관련 없는 가전제품 등 구입 여부','기자재 목록대장 비치 및 실제 구입 여부 확인','물품 재산대장 등재 여부']},
+  {f:'연구비 집행 - 자문료·원고료·도서비',d:['산학협력단'],new:false,c:['소득세 원천징수 여부','정당한 채주에게 계좌 이체 여부','참여 연구원이 아닌 자에게 자문료 지급 여부','도서목록 대장 비치 여부']},
+  {f:'연구비 집행 - 기기 및 재료비',d:['산학협력단','학사지원팀'],new:false,c:['기자재 목록대장 비치 및 실제 구입 여부','연구비 관련 없는 가전제품 등 구입 여부','물품 재산대장 등재 여부','연구와 관련이 없는 논문게재료 지급 여부']},
+  {f:'간접연구 경비',d:['산학협력단'],new:false,c:['수주 실적에 따른 인센티브 지급 여부','연도말 잔액 적립 및 유용·횡령 여부','간접비 징수 여부','보상금 소득세 원천징수 여부']},
+  {f:'연구 결과',d:['산학협력단'],new:false,c:['연구 결과보고서 기한내 제출 여부','지적재산권 출원 및 등록 여부 (개인명의 등록 여부)','협약에 의한 이익금 수입처리 여부']},
+ ]},
+ {id:4,title:'물품 및 기자재 관리',items:[
+  {f:'물품 수급 관리계획',d:['학사지원팀'],new:false,c:['물품수급에 대한 학과 5개년 계획 수립 여부']},
+  {f:'물품취득 및 운용',d:['학사지원팀','시설안전관재팀'],new:false,c:['물품 구입·수리 시 교육과정 운영 계획과의 연계 여부','물품대장 등재 여부','기증품의 물품대장 등재 여부','물품 구입심의 위원회 운영 여부','고가 기자재 활용 기록 관리 여부']},
+  {f:'연구비 기자재 등록',d:['산학협력단'],new:false,c:['연구비로 구입한 기자재 등록 및 중복 여부']},
+  {f:'불용결정 및 처분',d:['시설안전관재팀'],new:false,c:['불용결정 및 처분 (매각, 해체, 폐기) 적정성','감정평가 실시 여부','불용품 저가매각 손실 초래 여부','임의처분 여부']},
+  {f:'재물조사',d:['시설안전관재팀'],new:false,c:['연도별 재물조사, 현품 실사 여부','재물조사 결과 사후처리 적정성','재물조사 결과 문제점 및 개선방안 조치 여부']},
+  {f:'물품 기자재관리',d:['시설안전관재팀'],new:true,c:['연구기자재 자산 미등록 여부','재물조사 미실시 여부','불용품 임의처분 여부']},
+ ]},
+ {id:5,title:'입학 관리 및 대학정보공시',items:[
+  {f:'대입전형 일반',d:['입학지원팀'],new:false,c:['대학입학전형시행계획 수립 및 규정 부합여부','입시 공정관리 대책 수립여부','입학정원 초과모집 여부','입학전형 성적 처리의 누락, 오류 여부','입학전형에서 커트라인 미달 지원자 선발 여부','입학전형료 책정 및 집행가이드라인 준수 여부']},
+  {f:'입시 수당 지급',d:['입학지원팀'],new:false,c:['당연직 위원 입시수당 지급 여부','입시업무 미수행 교원에게 수당 지급 여부','본연의 입시업무 수행 교직원 입시수당 지급 여부']},
+  {f:'농·어촌학생, 산업체 등 특별전형 관리',d:['입학지원팀'],new:false,c:['무자격 및 경력 미달자 합격여부','산업체 위탁생 선발 승인 조건 위배 여부','특별가산점 부여, 채점의 적정성 여부','미등록 및 등록 취소자 충원시 전형요강 준수 여부']},
+  {f:'면접고사 관리',d:['입학지원팀'],new:false,c:['면접·평가위원 위촉의 적정성 여부','출제의 객관성, 공정성 여부','채점 기준 위배 등 채점의 오류 여부','입시관련 교직원 친인척 응시의 입시전형위원 위촉 여부']},
+  {f:'위반사항 정보공시',d:['전략기획팀'],new:false,c:['「고등교육법」위반 내용 및 조치결과 정보공시 여부']},
+  {f:'허위공시',d:['전략기획팀'],new:false,c:['외부사업 선정지표 허위공시 관리여부']},
+  {f:'입학관리',d:['입학지원팀'],new:true,c:['입학전형료 대납·충원율 부당 공시','입시관리위원회 정족수 미달']},
+ ]},
+ {id:6,title:'학사 관리',items:[
+  {f:'법정 수업일수 및 수업시수',d:['학사지원팀'],new:false,c:['매학년도 30주 이상 수업 실시 여부','순수 수업일수 산출','법정공휴일 등으로 인한 기준시수 확보 여부','부족 시수 보강 계획서 및 보강 실시 여부']},
+  {f:'교수의 수업결손 여부',d:['학사지원팀'],new:false,c:['수업결손에 대한 보강계획서 작성 여부','강의실이 중복되게 보강처리 여부','전임교원의 수업시수 미달여부','초과강사료 지급 적정성 여부','전임교원 책임시간 준수 여부']},
+  {f:'출석관리 및 성적부여',d:['학사지원팀'],new:false,c:['출석 일수 미달자 성적부여 여부','출석 미점검 (출석부 백지상태) 여부','출석 점수의 공정성 여부','조기취업자 성적부여 적정성 여부']},
+  {f:'성적 평가 관리',d:['학사지원팀'],new:false,c:['평정요소 및 비율 적용의 적정성 여부','채점 및 이기의 정확 여부','근거 없이 성적 상향(하향) 조정 여부','성적 정정 절차 및 증빙자료 첨부 여부','성적산출자료 보관 여부']},
+  {f:'수강신청',d:['학사지원팀'],new:false,c:['중복 수강신청 여부','기준학점 초과하여 수강허용 여부']},
+  {f:'온라인강의 관리',d:['학사지원팀','AX혁신지원센터'],new:true,c:['대리출석 여부','이러닝 관리 (LMS 접속 로그 확인)']},
+  {f:'졸업에 필요한 학점 이수',d:['학사지원팀'],new:false,c:['전공필수, 교양필수 교과 이수 여부 (복학생 중심)','졸업사정회의 운영의 적정성 여부']},
+  {f:'전임교원의 타 대학 출강',d:['학사지원팀'],new:false,c:['총장의 허가없이 타 기관 출강 유무','타 기관 출강과 본교 수업시간 중복 여부']},
+  {f:'장학금 지급',d:['학생복지팀'],new:false,c:['외부 장학금의 지원 기준과 일치 여부','내부 장학금의 공정성 여부','장학금 중복지급 및 자격 미달자에게 지급 여부','장학금 지급 시 특정과에 편중 여부','장학금 목적외 사용 여부']},
+  {f:'교직과정 운영 및 교원 자격 검정',d:['학사지원팀'],new:false,c:['전문대학 실기교사 자격증 무시험 조건 (해당분야 자격증 소지 여부, 인적성검사 등)']},
+  {f:'기타 (전과·재입학·무인가과정)',d:['학사지원팀'],new:false,c:['전과업무 처리 적정 여부','무인가(비인가) 교육과정 운영 여부','재입학 업무 처리 적정 여부']},
+  {f:'현장실습',d:['현장실습지원센터'],new:false,c:['현장실습 기간 중 현장지도 실시 여부','현장실습생 상해보험 가입 및 가입기간 확인']},
+ ]},
+ {id:7,title:'시설 관리',items:[
+  {f:'사업 및 공사계획',d:['전략기획팀','시설안전관재팀'],new:false,c:['발전계획에 의한 사업계획 수립 여부','공사 규모 적정 여부','계속공사에서 차기 공사와의 관련 고려 여부']},
+  {f:'공사설계',d:['시설안전관재팀','캠퍼스디자인센터'],new:false,c:['설계용역비 요율 적용의 적정 여부','설계도, 시방서, 내역서의 상호 상이점 여부','공사원가계산 제비율 적용의 적정 여부','건축협의 및 소방협의 등 인·허가 업무 이행 여부']},
+  {f:'공사관리',d:['시설안전관재팀'],new:false,c:['착공 신고서류의 적합 여부','현장대리인의 적격 여부 및 상주 여부','환경보전비 사용계획서 제출 및 사용내역의 적정 여부','산재보험료 및 고용보험 사업장 신고 여부']},
+  {f:'도급관리',d:['시설안전관재팀'],new:false,c:['일괄 하도급 여부','소방시설공사 하도급 여부','하도급 신고 여부','무자격자에게 하도급 여부']},
+  {f:'시공관리',d:['시설안전관재팀'],new:false,c:['공사감독일지 미작성 여부','건설폐기물 처리의 적정 여부','낙하물 방지망 설치 여부 (건물 높이 15m 이내)','추락방지 안전시설 설치 여부','콘크리트 두께 설계도 규격과 상이 시공 여부','철골 용접 부위의 비파괴검사 시행 여부']},
+  {f:'설계변경',d:['시설안전관재팀'],new:false,c:['사전승인 없는 공법, 공종 또는 위치의 변경 여부','총액입찰계약에서 설계서 변경없이 계약금액 변경 여부']},
+  {f:'공사기간 연장',d:['시설안전관재팀'],new:false,c:['도급자 원인으로 인한 공기 지연에 대해 지체상금 납부 면제 여부','불가항력 요인이 아닌 사유로 공사 연기 여부']},
+  {f:'기성 및 준공검사',d:['시설안전관재팀'],new:false,c:['기성·준공검사 없이 공사비 지출 여부','준공검사조서 및 기성검사조서 작성 여부','각종 제출물 확인 여부 (준공도면, 검사필증, 사진철 등)','건축물사용승인 여부']},
+  {f:'하자관리',d:['시설안전관재팀'],new:false,c:['하자검사 실시 여부 (년 2회)','하자검사조서 작성 여부','하자보수 미이행시 하자보수 보증금 환수 여부']},
+  {f:'유지관리',d:['시설안전관재팀'],new:false,c:['안전점검 실시 여부','위험 시설물 방치 여부','소방시설 자체점검 실시 여부','전기안전점검 실시 여부']},
+ ]},
+];
+
+const DEPT_ICONS={학사지원팀:'🎓',총무회계팀:'💰',학생복지팀:'🏠',전략기획팀:'📊',산학협력단:'🔬',시설안전관재팀:'🏗️',입학지원팀:'📝',법인:'🏛️',AX혁신지원센터:'💡',현장실습지원센터:'💼',캠퍼스디자인센터:'🎨'};
+
+// ── 서버에서 부서목록 로드 ──
+async function loadDeptsFromServer(){
+  try{
+    const url=getApiUrl();
+    if(!url||url.includes('여기에_GAS_URL'))return;
+    const r=await fetch(url+'?action=getDepts&year='+currentYear);
+    const d=await r.json();
+    if(d.ok && d.depts && d.depts.length>0){
+      localStorage.setItem('yuhan_admin_depts', JSON.stringify(d.depts));
+      loadCustomSections(); // 로드한 부서목록 즉시 반영
+    }
+  }catch(e){}
+}
+
+// ══════════ 학년도 관리 ══════════
+let currentYear = '';
+
+function getYearList(){
+  // 저장된 커스텀 연도 목록 우선
+  try{
+    const custom=JSON.parse(localStorage.getItem('yuhan_year_list')||'null');
+    if(custom&&custom.length>0)return custom;
+  }catch(e){}
+  // 기본: 2025~2035
+  const list=[];
+  for(let y=2025;y<=2035;y++)list.push(y);
+  return list;
+}
+
+function initYearSelect(){
+  const sel = document.getElementById('yearSelect');
+  if(!sel) return;
+  const saved = localStorage.getItem('yuhan_current_year');
+  const years = getYearList();
+  sel.innerHTML = years.map(y =>
+    `<option value="${y}" ${saved==y?'selected':''}>${y}학년도</option>`
+  ).join('')
+  + '<option value="__custom__">✏️ 직접 입력...</option>';
+  currentYear = saved || String(years[0]);
+  if(!saved) sel.value = currentYear;
+  updateYearUI();
+}
+
+function changeYear(year){
+  if(year==='__custom__'){
+    const input=prompt('적용할 학년도를 입력하세요 (예: 2036):', '');
+    if(!input||isNaN(parseInt(input))){
+      // 취소 시 이전 선택 복원
+      const sel=document.getElementById('yearSelect');
+      if(sel)sel.value=currentYear;
+      return;
+    }
+    const newYear=String(parseInt(input));
+    // 목록에 없으면 추가
+    const list=getYearList();
+    if(!list.includes(parseInt(newYear))){
+      list.push(parseInt(newYear));
+      list.sort((a,b)=>a-b);
+      localStorage.setItem('yuhan_year_list',JSON.stringify(list));
+      // select 목록 갱신
+      const sel=document.getElementById('yearSelect');
+      if(sel){
+        sel.innerHTML=list.map(y=>`<option value="${y}">${y}학년도</option>`).join('')
+          +'<option value="__custom__">✏️ 직접 입력...</option>';
+      }
+    }
+    year=newYear;
+  }
+  currentYear=String(year);
+  localStorage.setItem('yuhan_current_year',currentYear);
+  const sel=document.getElementById('yearSelect');
+  if(sel)sel.value=currentYear;
+  updateYearUI();
+  // GAS에 현재 학년도 저장 (다른 PC 동기화)
+  const _url=getApiUrl();
+  if(_url){
+    fetch(_url,{method:'POST',
+      body:JSON.stringify({action:'saveConfig',key:'currentYear',value:currentYear}),
+      headers:{'Content-Type':'text/plain;charset=utf-8'}
+    }).catch(()=>{});
+  }
+  // 학년도 변경 시 데이터 완전 초기화 후 재로드
+  allData={};
+  loadAll();
+}
+
+function updateYearUI(){
+  const title = document.getElementById('topbarTitle');
+  if(title) title.textContent = currentYear + ' 행정업무 종합 자체점검';
+  const lbl = document.getElementById('clearYearLabel');
+  if(lbl) lbl.textContent = currentYear+'학년도';
+}
+
+// 학년도별 localStorage 키 생성
+function deptLsKey(dept){
+  return 'yuhan_dept_' + currentYear + '_' + dept;
+}
+
+function getActiveDepts(){
+  // ★ 버그A 수정: ALL_DEPTS 직접 사용 (SECTIONS.d[] 기반이면 부서 변경이 현황판에 미반영)
+  if(ALL_DEPTS && ALL_DEPTS.length>0) return [...ALL_DEPTS];
+  // fallback (ALL_DEPTS 초기화 전)
+  const set=new Set();
+  SECTIONS.forEach(s=>s.items.forEach(i=>i.d.forEach(d=>set.add(d))));
+  return [...set].sort();
+}
+
+// ══════════ 상태 ══════════
+let allData={};
+let selectedDept='';
+let activeTabIdx=0;
+
+// ══════════ API ══════════
+// ★ GAS 웹앱 URL 기본값 — 모든 기기에서 자동 연결
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzM2pnDcvDt6C4kQWakywDt5CQnSD4pw5zI1gV8TjaLm_LsHySUvMaCoNb3kFl2LY1C/exec';
+function getApiUrl(){return localStorage.getItem('apiUrl')||DEFAULT_API_URL;}
+
+// 관리자용 POST API 호출
+async function callApi(body){
+  const url=getApiUrl();
+  if(!url||url.includes('여기에_GAS_URL'))return null;
+  try{
+    const year=localStorage.getItem('yuhan_current_year')||'2025';
+    const r=await fetch(url,{
+      method:'POST',
+      body:JSON.stringify({...body,year}),
+      headers:{'Content-Type':'text/plain;charset=utf-8'}
+    });
+    const text=await r.text();
+    return JSON.parse(text);
+  }catch(e){console.error('callApi 오류:',e);return null}
+}
+
+function saveApiUrl(){const v=document.getElementById('apiUrl').value.trim();localStorage.setItem('apiUrl',v);updateApiStatus(!!v);toast('저장됨','ok')}
+function updateApiStatus(ok){const el=document.getElementById('apiStatus');el.textContent=ok?'API 연결됨':'API 미연결';el.className='tag '+(ok?'tag-ok':'tag-ng')}
+async function testApi(){
+  const url=getApiUrl();if(!url){toast('URL 입력 필요','err');return}
+  try{const r=await fetch(url+'?action=getAll&year='+encodeURIComponent(currentYear));const d=await r.json();if(d.ok){toast('연결 성공','ok');updateApiStatus(true)}else toast('실패: '+d.msg,'err')}
+  catch(e){toast('오류: '+e.message,'err')}
+}
+function toggleApiDrawer(){document.getElementById('apiDrawer').classList.toggle('open')}
+
+// ══════════ 데이터 로드 ══════════
+async function loadAll(){
+  const btn=document.getElementById('refreshBtn');
+  btn.classList.add('pulse');btn.textContent='⏳ 로딩...';
+
+  // 매 로드마다 allData 초기화 → 최신 상태 항상 반영
+  allData={};
+
+  const url=getApiUrl();
+  if(url && !url.includes('여기에_GAS_URL')){
+    try{const r=await fetch(url+'?action=getAll&year='+encodeURIComponent(currentYear));const d=await r.json();if(d.ok){mergeServerData(d.data);toast('서버 동기화','ok')}else toast('서버 오류','warn')}
+    catch(e){console.error('API 오류:',e);toast('⚠ 서버 연결 실패 — API URL을 확인하세요 (다른 기기 데이터 미반영)','warn')}
+  }
+  loadLocalAll();
+  render();
+  btn.classList.remove('pulse');btn.textContent='🔄 새로고침';
+}
+
+function mergeServerData(deptList){
+  // GAS getAll 반환: [{dept, writer, ..., rows:[{secTitle,field,v24,v25,note}]}]
+  deptList.forEach(d=>{
+    if(!d.dept)return;
+    allData[d.dept]={
+      dept:       d.dept,
+      writer:     d.writer     || '',
+      savedAt:    d.savedAt    || '',
+      status:     d.status     || '',
+      headName:   d.headName   || '',
+      headAt:     d.submittedAt|| '',
+      adminComment:d.adminComment||'',
+      adminAt:    d.adminAt    || '',
+      rejected:   !!d.rejected,
+      rows:       Array.isArray(d.rows)?d.rows:[]  // 이미 {v24,v25,...} 구조
+    };
+  });
+}
+
+function loadLocalAll(){
+  getActiveDepts().forEach(dept=>{
+    // 학년도별 키만 사용 (타 학년도 데이터 유입 차단)
+    const lsKeyNew = deptLsKey(dept);
+    const saved=localStorage.getItem(lsKeyNew);
+    if(!saved)return;
+    try{
+      const d=JSON.parse(saved);
+      // allData가 없거나(서버 미연결) 부서 일치 시 localStorage 반영
+      if(d.dept===dept){  // dept 불일치 시 완전 차단 (크로스오염 방지)
+        const lsStatus=d.rejected?'반려됨':d.submitted?'부서장확인완료':'임시저장';
+        if(!allData[dept]){
+          // 서버 데이터 없는 경우 localStorage 적용
+          allData[dept]={dept,writer:d.writer?.name||'',savedAt:d.savedAt||'',
+            status:lsStatus,headName:d.headSign||'',headAt:d.submittedAt||'',
+            adminComment:'',adminAt:'',rows:buildRowsFromLS(dept,d.state||{})};
+        } else if(d.submitted && allData[dept].status==='임시저장'){
+          // localStorage에 제출완료인데 서버는 임시저장 → localStorage 상태로 update
+          allData[dept].status='부서장확인완료';
+          allData[dept].headAt=d.submittedAt||allData[dept].headAt;
+          if(!allData[dept].rows||allData[dept].rows.length===0){
+            allData[dept].rows=buildRowsFromLS(dept,d.state||{});
+          }
+        }
+      }
+    }catch(e){}
+  });
+}
+
+function buildRowsFromLS(dept,state){
+  const rows=[];
+  SECTIONS.forEach(sec=>sec.items.forEach((item,idx)=>{
+    if(!item.d.includes(dept))return;
+    const k=`${sec.id}-${idx}`;
+    const s=state[k]||{};
+    rows.push({secId:sec.id,secTitle:sec.title,field:item.f,v24:s.v24||'',v25:s.v25||'',note:s.note||''});
+  }));
+  return rows;
+}
+
+// ══════════ 렌더링 ══════════
+// 날짜만 추출 (시간 제거)
+function fmtDate(val){
+  if(!val||val==='-')return val||'-';
+  const s=String(val);
+  // ISO: 2026-03-20T...
+  if(s.includes('T'))return s.split('T')[0];
+  // 한국어: 2026. 3. 20. 오후...
+  const ko=s.match(/^(\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.)/);
+  if(ko)return ko[1].trim();
+  // 일반: 2026-03-20 17:30:00
+  return s.split(' ')[0];
+}
+
+function getDeptStatus(dept){
+  const d=allData[dept];
+  if(!d)return 'none';
+  if(d.status==='관리자확인완료')return 'admin';
+  if(d.status==='반려됨')return 'reject';
+  if(d.status==='부서장확인완료')return 'submit';
+  return 'save';
+}
+
+function render(){
+  buildStats();buildPendingBanner();buildSidebar();buildDeptList();
+  if(selectedDept)buildDetail(selectedDept);
+}
+
+function buildStats(){
+  const active=getActiveDepts();
+  let submit=0,save=0,none=0;
+  active.forEach(dept=>{const s=getDeptStatus(dept);if(s==='submit'||s==='admin')submit++;else if(s==='save')save++;else none++;});
+  const total=active.length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-submit').textContent=submit;
+  document.getElementById('s-save').textContent=save;
+  document.getElementById('s-none').textContent=none;
+  const sp=total?Math.round(submit/total*100):0;
+  const svp=total?Math.round(save/total*100):0;
+  document.getElementById('bar-ok').style.width=sp+'%';
+  document.getElementById('pct-ok').textContent=sp+'%';
+  document.getElementById('bar-warn').style.width=svp+'%';
+  document.getElementById('pct-warn').textContent=svp+'%';
+}
+
+function buildPendingBanner(){
+  const active=getActiveDepts();
+  const pending=active.filter(d=>getDeptStatus(d)==='none'||getDeptStatus(d)==='save');
+  const banner=document.getElementById('pendingBanner');
+  if(!pending.length){banner.style.display='none';return}
+  banner.style.display='block';
+  document.getElementById('pendingCnt').textContent=pending.length;
+  document.getElementById('pendingTags').innerHTML=pending.map(d=>`<span class="ptag" onclick="showDetail('${d}')">${DEPT_ICONS[d]||'📁'} ${d}</span>`).join('');
+}
+
+function buildSidebar(){
+  const list=document.getElementById('sbList');
+  list.innerHTML='';
+  getActiveDepts().forEach(dept=>{
+    const st=getDeptStatus(dept);
+    const d=allData[dept];
+    const dot=st==='submit'||st==='admin'?'dot-ok':st==='reject'?'dot-reject':st==='save'?'dot-warn':'dot-dim';
+    const div=document.createElement('div');
+    div.className='sb-item'+(dept===selectedDept?' active':'');
+    div.innerHTML=`<div class="sb-item-l"><div class="sb-dot ${dot}"></div><div><div class="sb-name">${dept}</div><div class="sb-sub">${d?.writer||'미시작'}</div></div></div>`;
+    div.onclick=()=>showDetail(dept);
+    list.appendChild(div);
+  });
+}
+
+function buildDeptList(){
+  const list=document.getElementById('deptList');
+  list.innerHTML='';
+  getActiveDepts().forEach(dept=>{
+    const st=getDeptStatus(dept);
+    const d=allData[dept];
+    let ok=0,ng=0,total=0;
+    const totalItems=SECTIONS.reduce((acc,sec)=>acc+sec.items.filter(i=>i.d.includes(dept)).length,0);
+    if(d?.rows){d.rows.forEach(r=>{total++;if(r.v25==='무')ok++;else if(r.v25==='유')ng++;})}
+    const pct=totalItems?Math.round((ok+ng)/totalItems*100):0;
+    const stClass=st==='submit'||st==='admin'?'st-ok':st==='save'?'st-warn':'';
+    const statusTag=st==='admin'?`<span class="tag tag-blue" style="font-size:9px">🔍 감사실확인</span>`:st==='submit'?`<span class="tag tag-ok" style="font-size:9px">✅ 제출완료</span>`:st==='reject'?`<span class="tag tag-reject" style="font-size:9px">🔄 반려됨</span>`:st==='save'?`<span class="tag tag-warn" style="font-size:9px">💾 진행중</span>`:`<span class="tag tag-dim" style="font-size:9px">미시작</span>`;
+    const fillCls=st==='submit'||st==='admin'?'dc-fill-ok':st==='save'?'dc-fill-warn':'dc-fill-dim';
+    const pctColor=st==='submit'||st==='admin'?'var(--ok)':st==='save'?'var(--warn)':'var(--txt3)';
+    const div=document.createElement('div');
+    div.className=`dept-card ${stClass}${dept===selectedDept?' selected':''}`;
+    div.innerHTML=`
+      <div class="dc-head">
+        <div class="dc-name"><span class="dc-icon">${DEPT_ICONS[dept]||'📁'}</span>${dept}</div>
+        ${statusTag}
+      </div>
+      <div class="dc-writer">${d?.writer?`담당: ${d.writer}${d.headName?' · 부서장: '+d.headName:''}`:''}</div>
+      <div class="dc-prog">
+        <div class="dc-bar"><div class="dc-fill ${fillCls}" style="width:${pct}%"></div></div>
+        <div class="dc-pct" style="color:${pctColor}">${pct}%</div>
+      </div>
+      <div class="dc-meta">
+        <span>항목 ${totalItems}개</span>
+        ${ng>0?`<span class="dc-ng">이상있음 ${ng}건</span>`:''}
+        ${d?.headAt?`<span>${fmtDate(d.headAt)}</span>`:(d?.savedAt?`<span>${fmtDate(d.savedAt)}</span>`:'')}
+      </div>`;
+    div.onclick=()=>showDetail(dept);
+    list.appendChild(div);
+  });
+}
+
+// ══════════ 상세 패널 (모달 없이 우측에 표시) ══════════
+function showDetail(dept){
+  selectedDept=dept;
+  activeTabIdx=0;
+  buildSidebar();buildDeptList();
+  buildDetail(dept);
+  // 인쇄 버튼 표시
+  const pb=document.getElementById('printBtn');
+  if(allData[dept])pb.style.display='inline-flex';
+  else pb.style.display='none';
+}
+
+function buildDetail(dept){
+  document.getElementById('emptyDetail').style.display='none';
+  const dc=document.getElementById('detailContent');
+  dc.style.display='flex';
+  dc.style.flexDirection='column';
+  dc.style.flex='1';
+
+  const d=allData[dept];
+  const st=getDeptStatus(dept);
+
+  // 상세 헤더
+  const statusTag=st==='admin'?`<span class="tag tag-blue">🔍 감사실 확인 완료</span>`:st==='submit'?`<span class="tag tag-ok">✅ 부서장 확인 완료</span>`:st==='reject'?`<span class="tag tag-reject">🔄 반려됨 — 수정 요청</span>`:st==='save'?`<span class="tag tag-warn">💾 진행 중</span>`:`<span class="tag tag-dim">미시작</span>`;
+
+  let ok=0,ng=0,total=0;
+  if(d?.rows){d.rows.forEach(r=>{total++;if(r.v25==='무')ok++;else if(r.v25==='유')ng++;})}
+  const totalItems=SECTIONS.reduce((acc,sec)=>acc+sec.items.filter(i=>i.d.includes(dept)).length,0);
+  const pend=totalItems-ok-ng;
+
+  // 탭 구성
+  const mySecs=SECTIONS.filter(sec=>sec.items.some(i=>i.d.includes(dept)));
+
+  let tabsHtml='';
+  mySecs.forEach((sec,ti)=>{
+    const myItems=sec.items.filter(i=>i.d.includes(dept));
+    let tok=0,tng=0;
+    if(d?.rows){myItems.forEach(item=>{const r=d.rows.find(r=>r.secId===sec.id&&r.field===item.f);if(r?.v25==='무')tok++;else if(r?.v25==='유')tng++;})}
+    const tpend=myItems.length-tok-tng;
+    const badge=tng>0?`<span class="tbadge tbadge-ng">${tng}</span>`:tpend===0?`<span class="tbadge tbadge-ok">✓</span>`:`<span class="tbadge tbadge-dim">${tpend}</span>`;
+    tabsHtml+=`<button class="dp-tab${ti===activeTabIdx?' active':''}" onclick="switchTab(${ti})">${sec.id}. ${sec.title}${badge}</button>`;
+  });
+
+  // 이상있음 항목
+  const ngItems=d?.rows?.filter(r=>r.v25==='유')||[];
+  let ngHtml='';
+  if(ngItems.length>0){
+    ngHtml=`<div class="ng-list">
+      <div class="ng-list-title">⚠️ 이상있음(유) 항목 — ${ngItems.length}건</div>
+      ${ngItems.map(r=>`<div class="ng-list-item"><b>${r.field}</b> <span style="color:var(--txt2);font-size:10.5px">[${r.secTitle}]</span>${r.note?`<div style="color:var(--txt2);font-size:10.5px;padding-left:8px">→ ${r.note}</div>`:''}</div>`).join('')}
+    </div>`;
+  }
+
+  // 코멘트 영역
+  const isSubmitted=st==='submit'||st==='admin'||st==='reject';
+  let commentHtml='';
+  if(isSubmitted){
+    const labelBadge = st==='admin'
+      ? '  <span class="tag tag-blue" style="font-size:9px;margin-left:4px">확인완료</span>'
+      : st==='reject'
+        ? '  <span class="tag tag-reject" style="font-size:9px;margin-left:4px">반려됨</span>'
+        : '';
+    const roAttr = st==='admin' ? 'readonly' : '';
+    const prevComment = (d && d.adminComment) ? d.adminComment.replace(/</g,'&lt;') : '';
+    let btns = '';
+    if(st==='submit'){
+      btns = '<button class="btn btn-ok btn-sm" onclick="confirmDept(\''+dept+'\')">✅ 확인 완료 처리</button> '
+           + '<button class="btn btn-reject btn-sm" onclick="rejectDept(\''+dept+'\')">🔄 반려 (수정 요청)</button> '
+           + '<button class="btn btn-dark btn-sm" onclick="saveCommentOnly(\''+dept+'\')">💾 의견 저장</button>';
+    } else if(st==='reject'){
+      btns = '<span style="color:var(--ng);font-size:11px;font-weight:600">⏳ 부서 수정 대기 중...</span>';
+    }
+    commentHtml = '<div class="dp-comment">'
+      + '<label>📝 감사실 검토 의견' + labelBadge + '</label>'
+      + '<textarea class="comment-inp" id="adminCommentInp" placeholder="검토 의견 또는 반려 사유를 입력하세요..." '+ roAttr +' rows="2">' + prevComment + '</textarea>'
+      + '<div class="comment-row">' + btns + '</div>'
+      + '</div>';
+  }
+
+  // 탭 패널들 (인쇄 시 모두 표시)
+  let tabPanelsHtml='';
+  mySecs.forEach((sec,ti)=>{
+    const myItems=sec.items.filter(i=>i.d.includes(dept));
+    let rows='';
+    myItems.forEach(item=>{
+      const row=d?.rows?.find(r=>r.field===item.f&&(!r.secTitle||r.secTitle===sec.title))||{};
+      const isShared=item.d.length>1;
+      const others=item.d.filter(dd=>dd!==dept);
+      const vb=v=>!v?`<span class="vbadge v-dim">미입력</span>`:v==='무'?`<span class="vbadge v-ok">무</span>`:`<span class="vbadge v-ng">유</span>`;
+      rows+=`<tr class="${row.v25==='유'?'row-ng':''}">
+        <td>
+          <div class="fn">${item.f}${item.new?'<span class="newbadge">신설</span>':''}</div>
+          <div>${item.c.map(c=>`<div class="ck">◦ ${c}</div>`).join('')}</div>
+        </td>
+        <td style="text-align:center;width:52px">${isShared?`<span class="shared-badge" title="공동: ${others.join(', ')}">공동</span>`:'<span style="color:var(--txt3);font-size:10px">단독</span>'}</td>
+        <td style="text-align:center;width:76px">${vb(row.v24)}</td>
+        <td style="text-align:center;width:76px">${vb(row.v25)}</td>
+        <td style="font-size:11px;color:var(--txt2);width:180px">${row.note||''}</td>
+      </tr>`;
+    });
+    tabPanelsHtml+=`<div class="tab-panel" id="tabPanel${ti}" style="${ti===activeTabIdx?'':'display:none'}">
+      <div class="tab-section-title" style="margin:12px 0 4px;font-size:12px;font-weight:700;color:var(--blue)">${sec.id}. ${sec.title}</div>
+      <table class="chk-table">
+        <thead><tr>
+          <th style="text-align:left;min-width:220px">세부분야 / 점검사항</th>
+          <th style="width:52px">구분</th>
+          <th style="width:76px">전년도<br>2024</th>
+          <th style="width:76px">당해연도<br>2025</th>
+          <th style="width:180px">비고</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  });
+
+  if(!d){
+    dc.innerHTML=`
+      <div class="dp-head">
+        <div><div class="dp-title">${DEPT_ICONS[dept]||'📁'} ${dept}</div><div class="dp-meta">아직 제출된 데이터가 없습니다</div></div>
+        <div class="dp-head-r">${statusTag}</div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--txt3);font-size:13px">이 부서의 제출 데이터가 없습니다.</div>`;
+    return;
+  }
+
+  dc.innerHTML=`
+    <!-- 인쇄 헤더 -->
+    <div class="print-report-header">
+      <table>
+        <tr class="hdr-title"><td colspan="4">유한대학교 ${currentYear}학년도 행정업무 종합 자체점검 결과</td></tr>
+        <tr class="hdr-odd">
+          <td style="width:80px">담당부서</td><td style="font-weight:700;font-size:12pt">${dept}</td>
+          <td style="width:80px">점검일</td><td>${fmtDate(d.savedAt)}</td>
+        </tr>
+        <tr class="hdr-odd">
+          <td>담&nbsp;&nbsp;&nbsp;당&nbsp;&nbsp;&nbsp;자</td><td>${d.writer||'-'}</td>
+          <td>부&nbsp;&nbsp;서&nbsp;&nbsp;장</td><td>${d.headName||'-'}</td>
+        </tr>
+        <tr class="hdr-odd">
+          <td>제출일시</td><td>${fmtDate(d.headAt||d.savedAt)}</td>
+          <td>출력일시</td><td>${new Date().toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'})}</td>
+        </tr>
+      </table>
+    </div>
+
+
+    <div class="dp-head">
+      <div>
+        <div class="dp-title">${DEPT_ICONS[dept]||'📁'} ${dept}</div>
+        <div class="dp-meta">
+          담당자: ${d.writer||'-'} &nbsp;|&nbsp; 저장: ${fmtDate(d.savedAt)}
+          ${d.headName?` &nbsp;|&nbsp; 부서장: ${d.headName}`: ''}
+        </div>
+      </div>
+      <div class="dp-head-r">${statusTag}</div>
+    </div>
+
+    <div class="dp-summary">
+      <div class="ds-card"><div class="ds-val">${totalItems}</div><div class="ds-lbl">전체 항목</div></div>
+      <div class="ds-card ok"><div class="ds-val">${ok}</div><div class="ds-lbl">이상없음 (무)</div></div>
+      <div class="ds-card ng"><div class="ds-val">${ng}</div><div class="ds-lbl">이상있음 (유)</div></div>
+    </div>
+
+    ${ngHtml}
+
+    <div class="dp-tabs" id="dpTabs">${tabsHtml}</div>
+
+    <div class="tab-content" id="tabContent">
+      ${tabPanelsHtml}
+    </div>
+
+    ${commentHtml}`;
+}
+
+function switchTab(ti){
+  activeTabIdx=ti;
+  document.querySelectorAll('.dp-tab').forEach((t,i)=>t.classList.toggle('active',i===ti));
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>p.style.display=i===ti?'block':'none');
+}
+
+// ══════════ 인쇄 ══════════
+function doPrint(){
+  // CSS @media print에서 .tab-panel{display:block !important}으로 자동 처리
+  // JS 직접 제어 불필요 — 인쇄 후 화면 잔류 문제 원천 방지
+  window.print();
+}
+
+// ══════════ 감사실 확인 ══════════
+async function confirmDept(dept){
+  const comment=document.getElementById('adminCommentInp')?.value||'';
+  const url=getApiUrl();
+  if(url){try{await fetch(url,{method:'POST',body:JSON.stringify({action:'adminComment',dept,comment,year:currentYear}),headers:{'Content-Type':'text/plain;charset=utf-8'}})}catch(e){}}
+  if(allData[dept]){allData[dept].adminComment=comment;allData[dept].status='관리자확인완료'}
+  render();buildDetail(dept);
+  toast('✅ 확인 완료 처리됨','ok');
+}
+
+async function rejectDept(dept){
+  const comment=document.getElementById('adminCommentInp')?.value||'';
+  if(!comment.trim()){
+    toast('반려 사유를 입력하세요','err');
+    document.getElementById('adminCommentInp')?.focus();
+    return;
+  }
+  if(!confirm('"'+dept+'" 부서에 반려 처리하시겠습니까?\n\n반려 사유:\n'+comment+'\n\n부서 담당자의 입력값이 초기화되고, 처음부터 다시 점검해야 합니다.'))return;
+
+  const now=new Date().toLocaleString('ko-KR',{timeZone:'Asia/Seoul'});
+
+  // 학년도 키(신규) + 구버전 키 모두 처리
+  const lsKeyNew=deptLsKey(dept);
+  const lsKeyOld='yuhan_dept_'+dept;
+
+  // 반려 + 입력값 초기화: state를 빈 객체로 리셋
+  const rejectData={
+    dept:dept,
+    writer:null,           // 담당자 정보도 초기화
+    submitted:false,       // 제출 잠금 해제
+    rejected:true,
+    rejectReason:comment,
+    rejectedAt:now,
+    savedAt:now,
+    headSign:'',
+    state:{}               // ★ 핵심: 모든 입력값(v24/v25/note) 초기화
+  };
+
+  // 두 키 모두 업데이트
+  localStorage.setItem(lsKeyNew, JSON.stringify(rejectData));
+  localStorage.setItem(lsKeyOld, JSON.stringify(rejectData));
+
+  // API에도 반려 상태 기록
+  const url=getApiUrl();
+  if(url){
+    try{
+      await fetch(url,{
+        method:'POST',
+        body:JSON.stringify({action:'adminComment',dept,comment:'[반려] '+comment,year:currentYear}),
+        headers:{'Content-Type':'text/plain;charset=utf-8'}
+      });
+    }catch(e){}
+  }
+
+  if(allData[dept]){
+    allData[dept].adminComment='[반려] '+comment;
+    allData[dept].status='반려됨';
+    allData[dept].rows=[]; // 관리자 화면 rows도 초기화
+  }
+  render();buildDetail(dept);
+  toast('🔄 '+dept+' 반려됨 — 입력값 초기화 완료','warn');
+}
+// ── 데이터 초기화 ──
+function clearLocalData(){
+  if(!confirm(currentYear+'학년도 로컬 저장 데이터를 모두 초기화하시겠습니까?\n\n부서 담당자 PC의 데이터도 함께 초기화됩니다.'))return;
+  const depts=getActiveDepts();
+  let count=0;
+  depts.forEach(dept=>{
+    // 학년도 키 + legacy 키 모두 삭제
+    const k=deptLsKey(dept);
+    const kLeg='yuhan_dept_'+dept;
+    if(localStorage.getItem(k)){localStorage.removeItem(k);count++;}
+    if(localStorage.getItem(kLeg)){localStorage.removeItem(kLeg);count++;}
+  });
+  // ★ 리셋 신호 발송: 같은 브라우저의 부서용 HTML이 감지해서 초기화
+  const signal={year:currentYear, time:Date.now()};
+  localStorage.setItem('yuhan_reset_signal', JSON.stringify(signal));
+  // 신호 발송 후 바로 제거 (storage 이벤트는 값이 변경될 때 발생)
+  setTimeout(()=>localStorage.removeItem('yuhan_reset_signal'), 500);
+  allData={};
+  render();
+  toast('✅ 로컬 데이터 초기화 완료 ('+count+'건)','ok');
+}
+
+async function clearServerData(){
+  if(!confirm('⚠️ 경고: 스프레드시트의 '+currentYear+'학년도 데이터를 전체 삭제합니다.\n\n이 작업은 되돌릴 수 없습니다.'))return;
+  if(!confirm('정말로 삭제하시겠습니까? 한 번 더 확인해주세요.'))return;
+  const url=getApiUrl();
+  if(url){
+    try{
+      const r=await fetch(url,{method:'POST',
+        body:JSON.stringify({action:'clearAll',year:currentYear}),
+        headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      const text=await r.text();
+      const d=JSON.parse(text);
+      if(d.ok){toast('✅ 서버 데이터 '+d.deleted+'건 삭제됨','ok');}
+      else{toast('서버 오류: '+(d.msg||'알 수 없음'),'err');return;}
+    }catch(e){toast('서버 연결 실패 — 로컬만 초기화합니다','warn');}
+  }
+  clearLocalData();
+}
+
+function saveCommentOnly(dept){
+  const comment=document.getElementById('adminCommentInp')?.value||'';
+  if(allData[dept])allData[dept].adminComment=comment;
+  toast('의견 저장됨','ok');
+}
+
+// ══════════ CSV ══════════
+function exportCSV(){
+  let csv='\uFEFF부서명,담당자,부서장,제출상태,저장시각,분야,항목,구분,전년도2024,당해연도2025,비고,관리자의견\n';
+  Object.values(allData).forEach(d=>{
+    if(!d.rows)return;
+    d.rows.forEach(row=>{
+      const item=SECTIONS.flatMap(s=>s.items).find(i=>i.f===row.field);
+      const shared=item?.d?.length>1?item.d.join('/'):'단독';
+      csv+=`"${d.dept}","${d.writer||''}","${d.headName||''}","${d.status||''}","${d.savedAt||''}","${row.secTitle}","${row.field}","${shared}","${row.v24||''}","${row.v25||''}","${(row.note||'').replace(/"/g,'""')}","${(d.adminComment||'').replace(/"/g,'""')}"\n`;
+    });
+  });
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:'2025_자체점검_전체현황.csv'});
+  a.click();
+}
+
+// ══════════ 토스트 ══════════
+let toastT;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+// ══════════ 실시간 감지 ══════════
+window.addEventListener('storage',e=>{
+  if(e.key?.startsWith('yuhan_dept_')){
+    const dept=e.key.replace('yuhan_dept_','');
+    delete allData[dept];
+    // 재제출인지 확인해서 토스트 메시지 구분
+    try{
+      const d=JSON.parse(e.newValue||'{}');
+      if(d.submitted&&!d.rejected){
+        toast(`📤 ${dept} 재제출됨 — 확인 필요`,'ok');
+      } else if(d.rejected){
+        toast(`🔄 ${dept} 반려 상태`,'warn');
+      } else {
+        toast(`💡 ${dept} 데이터 업데이트됨`,'warn');
+      }
+    }catch(e2){toast(`💡 ${dept} 업데이트됨`,'warn');}
+    setTimeout(loadAll,200);
+  }
+});
+
+// ══════════ 초기화 ══════════
+// ══════════ 탭 전환 ══════════
+let currentMainTab='main';
+function switchMainTab(tab){
+  currentMainTab=tab;
+  const layout=document.getElementById('layoutDiv')||document.querySelector('.layout');
+  const editPanel=document.getElementById('editPanel');
+  const mainBtn=document.getElementById('tabMainBtn');
+  const editBtn=document.getElementById('tabEditBtn');
+
+  if(tab==='main'){
+    if(layout)layout.style.display='flex';
+    if(editPanel)editPanel.style.display='none';
+    mainBtn.style.background='rgba(255,255,255,.2)';mainBtn.style.color='#fff';
+    editBtn.style.background='transparent';editBtn.style.color='rgba(255,255,255,.6)';
+  } else {
+    if(layout)layout.style.display='none';
+    if(editPanel)editPanel.style.display='block';
+    editBtn.style.background='rgba(255,255,255,.2)';editBtn.style.color='#fff';
+    mainBtn.style.background='transparent';mainBtn.style.color='rgba(255,255,255,.6)';
+    buildEditPanel();
+  }
+}
+
+// ══════════ 항목 편집 ══════════
+const ALL_DEPTS=['학사지원팀','총무회계팀','학생복지팀','전략기획팀','산학협력단',
+  '시설안전관재팀','입학지원팀','법인','AX혁신지원센터','현장실습지원센터','캠퍼스디자인센터'];
+
+// 편집된 SECTIONS 복사본 (원본 SECTIONS와 별도 관리)
+let editedSections=null;
+
+function getEditSections(){
+  if(!editedSections){
+    // 깊은 복사
+    editedSections=JSON.parse(JSON.stringify(SECTIONS));
+  }
+  return editedSections;
+}
+
+function buildEditPanel(){
+  const secs=getEditSections();
+  const cont=document.getElementById('editContent');
+  if(!cont)return;
+
+  // 부서 관리 섹션 먼저 렌더링
+  const deptMgmtHtml=buildDeptMgmtHtml();
+  cont.innerHTML=deptMgmtHtml+secs.map((sec,si)=>{
+    const itemsHtml=sec.items.map((item,ii)=>{
+      const deptCbs=ALL_DEPTS.map(d=>{
+        const active=item.d.includes(d);
+        return `<div class="dept-tag-btn${active?' active':''}"
+          data-si="${si}" data-ii="${ii}" data-dept="${d}"
+          onclick="toggleDeptTag(this,${si},${ii},'${d}')">
+          <span class="dtb-check">${active?'✓':'+'}</span>${d}
+        </div>`;
+      }).join('');
+      const checkRows=item.c.map((ck,ci)=>
+        `<div class="edit-check-row">
+          <input class="edit-check-inp" value="${ck.replace(/"/g,'&quot;')}"
+            onchange="updateCheck(${si},${ii},${ci},this.value)" placeholder="점검사항 입력">
+          <button class="edit-check-del" onclick="delCheck(${si},${ii},${ci})" title="삭제">✕</button>
+        </div>`
+      ).join('');
+      return `<div class="edit-item" id="editItem_${si}_${ii}">
+        <div class="edit-item-head">
+          <input class="edit-field-name" value="${item.f.replace(/"/g,'&quot;')}"
+            onchange="updateFieldName(${si},${ii},this.value)">
+          <label class="new-toggle">
+            <input type="checkbox" ${item.new?'checked':''} onchange="toggleNew(${si},${ii},this.checked)"> 신설
+          </label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:4px;letter-spacing:.5px">담당부서</div>
+        <div class="dept-checkboxes">${deptCbs}</div>
+        <div class="edit-checks-label">점검사항</div>
+        <div id="checks_${si}_${ii}">${checkRows}</div>
+        <button class="edit-add-check" onclick="addCheck(${si},${ii})">+ 점검사항 추가</button>
+      </div>`;
+    }).join('');
+    return `<div class="edit-section">
+      <div class="edit-sec-head" onclick="toggleEditSec(${si})">
+        <div class="edit-sec-title">${sec.id}. ${sec.title} <span style="color:var(--txt3);font-weight:400;font-size:11px">(${sec.items.length}개 항목)</span></div>
+        <div class="edit-sec-toggle" id="editToggle_${si}">▼</div>
+      </div>
+      <div class="edit-sec-body" id="editBody_${si}">${itemsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEditSec(si){
+  const body=document.getElementById('editBody_'+si);
+  const tog=document.getElementById('editToggle_'+si);
+  if(!body)return;
+  const open=body.classList.toggle('open');
+  if(tog)tog.textContent=open?'▲':'▼';
+}
+
+function toggleDeptTag(el,si,ii,dept){
+  const secs=getEditSections();
+  const item=secs[si].items[ii];
+  const idx=item.d.indexOf(dept);
+  if(idx>=0){
+    if(item.d.length===1){toast('담당 부서는 최소 1개 이상이어야 합니다','err');return}
+    item.d.splice(idx,1);
+    el.classList.remove('active');
+    el.querySelector('.dtb-check').textContent='+';
+  } else {
+    item.d.push(dept);
+    el.classList.add('active');
+    el.querySelector('.dtb-check').textContent='✓';
+  }
+  // 시각적 피드백 (순간 깜빡임)
+  el.style.transform='scale(0.95)';
+  setTimeout(()=>el.style.transform='',120);
+}
+
+// ── 부서 관리 ──
+function buildDeptMgmtHtml(){
+  const rows=ALL_DEPTS.map((d,i)=>
+    `<div class="dept-list-row" id="deptRow_${i}">
+      <input class="dept-name-inp" value="${d}" id="deptInp_${i}"
+        onchange="renameDept(${i},this.value)" placeholder="부서명">
+      <button class="dept-del-btn" onclick="deleteDept(${i})" title="삭제">🗑</button>
+    </div>`
+  ).join('');
+  return `<div class="dept-mgmt-area" style="margin-bottom:16px">
+    <div class="dept-mgmt-title">🏢 부서 관리 — 부서명 변경·추가·삭제</div>
+    <div id="deptListRows">${rows}</div>
+    <button class="dept-add-btn" onclick="addNewDept()">+ 새 부서 추가</button>
+    <div style="font-size:10px;color:var(--txt3);margin-top:8px">※ 부서 변경 후 반드시 [변경사항 저장] 버튼을 눌러주세요.</div>
+  </div>`;
+}
+
+function renameDept(i, newName){
+  newName=newName.trim();
+  if(!newName){toast('부서명을 입력하세요','err');return}
+  const old=ALL_DEPTS[i];
+  if(old===newName)return;
+  // editedSections에서 해당 부서명 일괄 변경
+  const secs=getEditSections();
+  secs.forEach(sec=>sec.items.forEach(item=>{
+    const idx=item.d.indexOf(old);
+    if(idx>=0)item.d[idx]=newName;
+  }));
+  ALL_DEPTS[i]=newName;
+  toast('"'+old+'" → "'+newName+'" 변경됨 (저장 필요)','ok');
+}
+
+function deleteDept(i){
+  const name=ALL_DEPTS[i];
+  if(!confirm(`"${name}" 부서를 삭제할까요?
+이 부서가 담당하는 항목에서 자동으로 제거됩니다.`))return;
+  // editedSections에서 해당 부서 제거
+  const secs=getEditSections();
+  secs.forEach(sec=>sec.items.forEach(item=>{
+    const idx=item.d.indexOf(name);
+    if(idx>=0){
+      if(item.d.length>1)item.d.splice(idx,1);
+      // 단독 담당이면 그대로 유지 (경고)
+      else toast(`"${item.f}" 항목은 ${name}만 담당 → 삭제 불가`,'warn');
+    }
+  }));
+  ALL_DEPTS.splice(i,1);
+  // 부서 목록 재렌더
+  const rows=document.getElementById('deptListRows');
+  if(rows)rows.innerHTML=ALL_DEPTS.map((d,i2)=>
+    `<div class="dept-list-row" id="deptRow_${i2}">
+      <input class="dept-name-inp" value="${d}" id="deptInp_${i2}"
+        onchange="renameDept(${i2},this.value)" placeholder="부서명">
+      <button class="dept-del-btn" onclick="deleteDept(${i2})" title="삭제">🗑</button>
+    </div>`
+  ).join('');
+  toast('"'+name+'" 삭제됨 (저장 필요)','warn');
+  // 항목 편집 패널 재빌드 (부서 태그 목록 갱신)
+  setTimeout(buildEditPanel,100);
+}
+
+function addNewDept(){
+  const name=prompt('새 부서명을 입력하세요:','');
+  if(!name||!name.trim()){return}
+  const trimmed=name.trim();
+  if(ALL_DEPTS.includes(trimmed)){toast('이미 존재하는 부서명입니다','err');return}
+  ALL_DEPTS.push(trimmed);
+  toast('"'+trimmed+'" 추가됨 (저장 필요)','ok');
+  // 부서 목록에 행 추가
+  const rows=document.getElementById('deptListRows');
+  if(rows){
+    const i=ALL_DEPTS.length-1;
+    const div=document.createElement('div');
+    div.className='dept-list-row';div.id='deptRow_'+i;
+    div.innerHTML=`<input class="dept-name-inp" value="${trimmed}" id="deptInp_${i}"
+      onchange="renameDept(${i},this.value)" placeholder="부서명">
+      <button class="dept-del-btn" onclick="deleteDept(${i})" title="삭제">🗑</button>`;
+    rows.appendChild(div);
+  }
+  // 항목 편집 패널 재빌드
+  setTimeout(buildEditPanel,100);
+}
+
+function updateFieldName(si,ii,val){
+  const secs=getEditSections();
+  secs[si].items[ii].f=val.trim()||secs[si].items[ii].f;
+}
+
+function toggleNew(si,ii,val){
+  getEditSections()[si].items[ii].new=val;
+}
+
+function updateCheck(si,ii,ci,val){
+  getEditSections()[si].items[ii].c[ci]=val;
+}
+
+function delCheck(si,ii,ci){
+  const secs=getEditSections();
+  if(secs[si].items[ii].c.length<=1){toast('점검사항은 최소 1개 이상이어야 합니다','err');return}
+  secs[si].items[ii].c.splice(ci,1);
+  // 해당 항목 재렌더링
+  const cont=document.getElementById('checks_'+si+'_'+ii);
+  if(cont){
+    cont.innerHTML=secs[si].items[ii].c.map((ck,ci2)=>
+      `<div class="edit-check-row">
+        <input class="edit-check-inp" value="${ck.replace(/"/g,'&quot;')}"
+          onchange="updateCheck(${si},${ii},${ci2},this.value)">
+        <button class="edit-check-del" onclick="delCheck(${si},${ii},${ci2})">✕</button>
+      </div>`
+    ).join('');
+  }
+}
+
+function addCheck(si,ii){
+  const secs=getEditSections();
+  secs[si].items[ii].c.push('새 점검사항을 입력하세요');
+  const ci=secs[si].items[ii].c.length-1;
+  const cont=document.getElementById('checks_'+si+'_'+ii);
+  if(cont){
+    const div=document.createElement('div');
+    div.className='edit-check-row';
+    div.innerHTML=`<input class="edit-check-inp" value="새 점검사항을 입력하세요"
+      onchange="updateCheck(${si},${ii},${ci},this.value)">
+      <button class="edit-check-del" onclick="delCheck(${si},${ii},${ci})">✕</button>`;
+    cont.appendChild(div);
+    div.querySelector('input').select();
+  }
+}
+
+function saveEditedSections(){
+  // ★ 버그A/B/C 통합 수정: 부서목록 + SECTIONS 저장 + BroadcastChannel 즉시 동기화
+  
+  // editedSections가 null이어도 ALL_DEPTS 변경(추가/삭제)은 저장
+  if(!editedSections){
+    try{
+      localStorage.setItem('yuhan_admin_depts', JSON.stringify(ALL_DEPTS));
+      localStorage.setItem('yuhan_sections_updated', Date.now().toString());
+      // ★ BroadcastChannel로 dept.html 같은탭 즉시 통지 (storage 이벤트 same-tab 미발화 보완)
+      try{
+        const _bc=new BroadcastChannel('yuhan_sync');
+        _bc.postMessage({type:'depts_updated',depts:ALL_DEPTS,year:currentYear});
+        _bc.close();
+      }catch(_e){}
+      render();
+      const _gasUrl=getApiUrl();
+      if(_gasUrl&&!_gasUrl.includes('여기에_GAS_URL')){
+        fetch(_gasUrl,{method:'POST',
+          body:JSON.stringify({action:'saveDepts',depts:ALL_DEPTS,year:currentYear}),
+          headers:{'Content-Type':'text/plain;charset=utf-8'}
+        }).then(r=>r.text()).then(text=>{
+          try{ const d=JSON.parse(text); if(d.ok) toast('✅ 부서목록 GAS 저장 완료','ok'); }catch(_e){}
+        }).catch(()=>{});
+      }
+      toast('✅ 부서목록 저장됨 — 현황판 즉시 반영','ok');
+    }catch(e){ toast('저장 실패: '+e.message,'err'); }
+    return;
+  }
+  // SECTIONS 완전 교체 (추가/삭제된 항목 포함 전체 반영)
+  SECTIONS.length=0;
+  editedSections.forEach(sec=>{
+    SECTIONS.push({
+      id:sec.id,
+      title:sec.title,
+      items:sec.items.map(item=>({
+        f:item.f,
+        d:[...item.d],
+        new:item.new,
+        c:[...item.c]
+      }))
+    });
+  });
+  // localStorage 영구 저장
+  try{
+    const payload=JSON.stringify(SECTIONS);
+    localStorage.setItem('yuhan_admin_sections', payload);
+    localStorage.setItem('yuhan_admin_depts', JSON.stringify(ALL_DEPTS));
+    localStorage.setItem('yuhan_sections_updated', Date.now().toString());
+    // ★ BroadcastChannel 즉시 통지 (같은 탭의 dept.html에도 전달)
+    try{
+      const _bc=new BroadcastChannel('yuhan_sync');
+      _bc.postMessage({type:'sections_updated',depts:ALL_DEPTS,year:currentYear});
+      _bc.close();
+    }catch(_e){}
+    render();
+    buildEditPanel();
+    const _gasUrl=getApiUrl();
+    if(_gasUrl&&!_gasUrl.includes('여기에_GAS_URL')){
+      toast('💾 GAS에 저장 중...','ok');
+      fetch(_gasUrl,{
+        method:'POST',
+        body:JSON.stringify({action:'saveDepts',depts:ALL_DEPTS,year:currentYear}),
+        headers:{'Content-Type':'text/plain;charset=utf-8'}
+      })
+      .then(r=>r.text())
+      .then(text=>{
+        try{
+          const d=JSON.parse(text);
+          if(d.ok) toast('✅ 저장 완료 — 다른 PC에서 새로고침하면 반영됩니다','ok');
+          else toast('⚠ GAS 저장 실패: '+d.msg,'warn');
+        }catch(_e){ toast('⚠ GAS 응답 오류','warn'); }
+      })
+      .catch(()=>toast('⚠ GAS 연결 실패 — 로컬에만 저장됨','warn'));
+    } else {
+      toast('✅ 저장됨 (GAS 미연결 — 로컬만)','ok');
+    }
+  }catch(e){toast('저장 실패: '+e.message,'err')}
+}
+
+function resetEditedSections(){
+  if(!confirm('모든 변경사항을 원래대로 되돌릴까요?'))return;
+  editedSections=null;
+  localStorage.removeItem('yuhan_admin_sections');
+  localStorage.removeItem('yuhan_admin_depts');
+  // ALL_DEPTS 원래대로 복원
+  const ORIG_DEPTS=['학사지원팀','총무회계팀','학생복지팀','전략기획팀','산학협력단',
+    '시설안전관재팀','입학지원팀','법인','AX혁신지원센터','현장실습지원센터','캠퍼스디자인센터'];
+  ALL_DEPTS.length=0;
+  ORIG_DEPTS.forEach(d=>ALL_DEPTS.push(d));
+  buildEditPanel();
+  toast('원래 상태로 복원됨','ok');
+}
+
+function loadCustomSections(){
+  try{
+    // 부서 목록 로드
+    const savedDepts=localStorage.getItem('yuhan_admin_depts');
+    if(savedDepts){
+      const depts=JSON.parse(savedDepts);
+      ALL_DEPTS.length=0;
+      depts.forEach(d=>ALL_DEPTS.push(d));
+    }
+    // SECTIONS 로드
+    const saved=localStorage.getItem('yuhan_admin_sections');
+    if(saved){
+      const custom=JSON.parse(saved);
+      // 완전 교체 (추가/삭제 항목 포함)
+      SECTIONS.length=0;
+      custom.forEach(sec=>{
+        SECTIONS.push({
+          id:sec.id,
+          title:sec.title,
+          items:sec.items.map(item=>({
+            f:item.f,
+            d:[...item.d],
+            new:!!item.new,
+            c:[...item.c]
+          }))
+        });
+      });
+    }
+  }catch(e){}
+}
+
+// ══ 비밀번호 관리 ══
+// 비밀번호 변경 방법: 아래 ADMIN_PW 값을 원하는 비밀번호로 수정
+const ADMIN_PW = 'yuhan2025!';
+
+function checkPw(){
+  const input = document.getElementById('pwInput').value;
+  const err   = document.getElementById('pwErr');
+  if(input === ADMIN_PW){
+    // 인증 성공 → 오버레이 제거
+    const ov = document.getElementById('pwOverlay');
+    if(ov){ ov.style.opacity='0'; ov.style.transition='opacity .3s';
+      setTimeout(()=>ov.remove(), 300); }
+    sessionStorage.setItem('admin_auth','1');
+    init();
+  } else {
+    err.textContent = '비밀번호가 올바르지 않습니다';
+    const inp = document.getElementById('pwInput');
+    inp.value=''; inp.focus();
+    inp.style.borderColor='#f87171';
+    setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)', 1500);
+  }
+}
+
+function init(){
+  const url=localStorage.getItem('apiUrl')||DEFAULT_API_URL;
+  const el=document.getElementById('apiUrl');
+  if(el)el.value=url;
+  updateApiStatus(!!url);
+  loadCustomSections();
+  initYearSelect();
+  // GAS에서 최신 부서목록 로드 (다른 기기에서 변경된 목록 반영)
+  loadDeptsFromServer().then(()=>loadAll());
+  // 자동 새로고침 비활성화 — 수동 새로고침만 사용 // 10초마다 자동갱신 (다른기기 실시간 반영)
+}
+// 이미 인증된 세션이면 바로 실행, 아니면 비밀번호 화면 표시
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('pwOverlay').remove();
+  init();
+} else {
+  // 비밀번호 입력창에 포커스
+  setTimeout(()=>{
+    const inp=document.getElementById('pwInput');
+    if(inp)inp.focus();
+  }, 100);
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>

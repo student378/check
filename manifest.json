@@ -1,0 +1,27 @@
+{
+  "name": "유한대학교 행정업무 자체점검",
+  "short_name": "자체점검",
+  "description": "유한대학교 감사실 행정업무 종합 자체점검 시스템",
+  "start_url": "./dept.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#1a3a6b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["productivity", "education"],
+  "lang": "ko"
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a6b"/>
+      <stop offset="100%" style="stop-color:#2557a7"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.12"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- 배경 -->
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="100" fill="url(#shine)"/>
+  <!-- 클립보드 몸체 -->
+  <rect x="128" y="138" width="256" height="300" rx="20" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <!-- 클립보드 상단 클립 -->
+  <rect x="196" y="118" width="120" height="48" rx="24" fill="#1a3a6b" stroke="#ffffff" stroke-width="10.5"/>
+  <!-- 체크라인 1 -->
+  <line x1="170" y1="228" x2="342" y2="228" stroke="rgba(255,255,255,0.35)" stroke-width="8" stroke-linecap="round"/>
+  <!-- 체크라인 2 -->
+  <line x1="170" y1="282" x2="342" y2="282" stroke="rgba(255,255,255,0.35)" stroke-width="8" stroke-linecap="round"/>
+  <!-- 체크라인 3 -->
+  <line x1="170" y1="336" x2="278" y2="336" stroke="rgba(255,255,255,0.35)" stroke-width="8" stroke-linecap="round"/>
+  <!-- 체크마크 (우측 하단) -->
+  <circle cx="330" cy="356" r="54" fill="#3fb950"/>
+  <polyline points="304,356 322,374 358,338" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
